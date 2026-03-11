@@ -1,0 +1,448 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum BusinessType {
+  RESTAURANT
+  DENTAL
+}
+
+enum BusinessStatus {
+  TRIAL
+  ACTIVE
+  PAUSED
+  SUSPENDED
+  CANCELLED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  BUSINESS_ADMIN
+  MANAGER
+  STAFF
+  READ_ONLY
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  LOCKED
+  SUSPENDED
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  CHURNED
+}
+
+enum LoyaltyTier {
+  NONE
+  BRONZE
+  SILVER
+  GOLD
+}
+
+enum BillingPlan {
+  STARTER
+  GROWTH
+  PRO
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum BillingStatus {
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+}
+
+enum PaymentReason {
+  SUBSCRIPTION
+  UPGRADE_PRORATION
+  TRIAL_CONVERSION
+}
+
+enum CampaignType {
+  WIN_BACK
+  RE_ENGAGEMENT
+  LOYALTY_REWARD
+  NEW_CUSTOMER_WELCOME
+  APPOINTMENT_REMINDER
+  ORDER_CONFIRMATION
+  PROMOTIONAL
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  CANCELLED
+}
+
+enum CampaignChannel {
+  EMAIL
+  SMS
+}
+
+enum AutomationTrigger {
+  FIRST_VISIT
+  INACTIVE_30
+  INACTIVE_60
+  APPOINTMENT_48H
+  APPOINTMENT_2H
+  LOYALTY_TIER_UP
+  POINTS_MILESTONE
+  ORDER_CONFIRMED
+}
+
+enum AuditEventType {
+  LOGIN
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PASSWORD_CHANGED
+  ROLE_CHANGED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  SESSION_REVOKED
+  USER_CREATED
+}
+
+// ─────────────────────────────────────────
+// BUSINESS
+// ─────────────────────────────────────────
+
+model Business {
+  id                String         @id @default(cuid())
+  slug              String         @unique
+  name              String
+  type              BusinessType
+  status            BusinessStatus @default(TRIAL)
+  email             String
+  phone             String?
+  address           String?
+  city              String?
+  state             String?
+  zip               String?
+
+  // Restaurant-specific
+  cuisineType       String?
+  locationCount     Int            @default(1)
+
+  // Dental-specific
+  npiNumber         String?
+  practitionerCount Int?
+
+  trialEndsAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  users             User[]
+  customers         Customer[]
+  subscription      Subscription?
+  campaigns         Campaign[]
+  automations       Automation[]
+  invoices          Invoice[]
+  auditLogs         AuditLog[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────
+// USERS (platform accounts — not customers)
+// ─────────────────────────────────────────
+
+model User {
+  id                  String          @id @default(cuid())
+  businessId          String
+  business            Business        @relation(fields: [businessId], references: [id])
+  email               String
+  firstName           String
+  lastName            String
+  role                UserRole
+  status              UserStatus      @default(PENDING)
+  passwordHash        String?
+  failedAttempts      Int             @default(0)
+  lockedAt            DateTime?
+  forcePasswordChange Boolean         @default(false)
+  createdBy           String?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  sessions            Session[]
+  passwordHistory     PasswordHistory[]
+  auditLogs           AuditLog[]
+
+  @@unique([businessId, email])
+  @@index([email])
+  @@index([businessId])
+}
+
+model Session {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  tokenId     String    @unique
+  ipAddress   String?
+  userAgent   String?
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([tokenId])
+}
+
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([tokenHash])
+}
+
+model AuditLog {
+  id         String         @id @default(cuid())
+  businessId String
+  business   Business       @relation(fields: [businessId], references: [id])
+  userId     String?
+  user       User?          @relation(fields: [userId], references: [id])
+  event      AuditEventType
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime       @default(now())
+
+  @@index([businessId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────
+// CUSTOMERS
+// ─────────────────────────────────────────
+
+model Customer {
+  id                  String         @id @default(cuid())
+  businessId          String
+  business            Business       @relation(fields: [businessId], references: [id])
+  firstName           String
+  lastName            String
+  email               String
+  phone               String?
+  status              CustomerStatus @default(ACTIVE)
+  address             String?
+  city                String?
+  state               String?
+  zip                 String?
+  preferredContact    String?
+
+  // Activity — auto-calculated, never manually edited
+  totalVisits         Int            @default(0)
+  totalSpent          Decimal        @default(0) @db.Decimal(10, 2)
+  averageOrderValue   Decimal        @default(0) @db.Decimal(10, 2)
+  firstVisitDate      DateTime?
+  lastVisitDate       DateTime?
+
+  // Loyalty — auto-calculated
+  loyaltyPoints       Int            @default(0)
+  loyaltyTier         LoyaltyTier    @default(NONE)
+  pointsRedeemed      Int            @default(0)
+
+  // Communication prefs
+  emailUnsubscribed   Boolean        @default(false)
+  smsUnsubscribed     Boolean        @default(false)
+
+  // Restaurant-specific
+  dietaryPreferences  String[]
+  favoriteItems       String[]
+  deliveryAddress     String?
+
+  // Dental-specific
+  dateOfBirth         DateTime?
+  insuranceProvider   String?
+  insuranceId         String?
+  lastAppointmentDate DateTime?
+  nextAppointmentDate DateTime?
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  campaignSends       CampaignSend[]
+
+  @@unique([businessId, email])
+  @@index([businessId])
+  @@index([status])
+  @@index([lastVisitDate])
+  @@index([loyaltyTier])
+}
+
+// ─────────────────────────────────────────
+// MARKETING
+// ─────────────────────────────────────────
+
+model Campaign {
+  id          String          @id @default(cuid())
+  businessId  String
+  business    Business        @relation(fields: [businessId], references: [id])
+  name        String
+  type        CampaignType
+  status      CampaignStatus  @default(DRAFT)
+  channel     CampaignChannel
+  segment     String
+  subject     String?
+  body        String
+  scheduledAt DateTime?
+  sentAt      DateTime?
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  sends       CampaignSend[]
+
+  @@index([businessId])
+  @@index([status])
+}
+
+model CampaignSend {
+  id               String    @id @default(cuid())
+  campaignId       String
+  campaign         Campaign  @relation(fields: [campaignId], references: [id])
+  customerId       String
+  customer         Customer  @relation(fields: [customerId], references: [id])
+  sentAt           DateTime  @default(now())
+  openedAt         DateTime?
+  clickedAt        DateTime?
+  convertedAt      DateTime?
+  unsubscribedAt   DateTime?
+  failed           Boolean   @default(false)
+  failureReason    String?
+
+  @@unique([campaignId, customerId])
+  @@index([campaignId])
+  @@index([customerId])
+}
+
+model Automation {
+  id           String            @id @default(cuid())
+  businessId   String
+  business     Business          @relation(fields: [businessId], references: [id])
+  trigger      AutomationTrigger
+  campaignType CampaignType
+  channel      CampaignChannel
+  delayMinutes Int               @default(0)
+  subject      String?
+  body         String
+  active       Boolean           @default(true)
+
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([businessId])
+  @@index([trigger])
+}
+
+// ─────────────────────────────────────────
+// BILLING
+// ─────────────────────────────────────────
+
+model Subscription {
+  id                 String        @id @default(cuid())
+  businessId         String        @unique
+  business           Business      @relation(fields: [businessId], references: [id])
+  plan               BillingPlan
+  billingCycle       BillingCycle  @default(MONTHLY)
+  status             BillingStatus @default(ACTIVE)
+
+  stripeCustomerId   String        @unique
+  stripeSubId        String?       @unique
+  paymentMethodLast4 String?
+  paymentMethodBrand String?
+
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean       @default(false)
+  cancelledAt        DateTime?
+
+  // Dunning
+  firstFailedAt      DateTime?
+  failedAttempts     Int           @default(0)
+  nextRetryAt        DateTime?
+
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  payments           Payment[]
+
+  @@index([status])
+  @@index([currentPeriodEnd])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
+  amount         Decimal       @db.Decimal(10, 2)
+  currency       String        @default("usd")
+  reason         PaymentReason
+  stripeChargeId String?       @unique
+  succeeded      Boolean
+  failureReason  String?
+
+  createdAt      DateTime      @default(now())
+
+  invoice        Invoice?
+
+  @@index([subscriptionId])
+  @@index([createdAt])
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  businessId    String
+  business      Business  @relation(fields: [businessId], references: [id])
+  paymentId     String?   @unique
+  payment       Payment?  @relation(fields: [paymentId], references: [id])
+  invoiceNumber String    @unique
+  amount        Decimal   @db.Decimal(10, 2)
+  tax           Decimal   @default(0) @db.Decimal(10, 2)
+  total         Decimal   @db.Decimal(10, 2)
+  pdfUrl        String?
+  isVoided      Boolean   @default(false)
+  isCreditNote  Boolean   @default(false)
+  refersToId    String?
+  issuedAt      DateTime  @default(now())
+  retainUntil   DateTime  // 7-year retention per invoice-rules.md
+
+  @@index([businessId])
+  @@index([invoiceNumber])
+  @@index([issuedAt])
+}
