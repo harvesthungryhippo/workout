@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  FOREARMS
+  CORE
+  QUADS
+  HAMSTRINGS
+  GLUTES
+  CALVES
+  FULL_BODY
+}
+
+enum ExerciseCategory {
+  STRENGTH
+  CARDIO
+  FLEXIBILITY
+  BODYWEIGHT
+}
+
+enum ExerciseEquipment {
+  BARBELL
+  DUMBBELL
+  CABLE
+  MACHINE
+  BODYWEIGHT
+  KETTLEBELL
+  BANDS
+  NONE
+}
+
+model WorkoutUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Exercise {
+  id           String            @id @default(cuid())
+  name         String            @unique
+  category     ExerciseCategory
+  muscleGroup  MuscleGroup
+  equipment    ExerciseEquipment @default(NONE)
+  instructions String?
+  createdAt    DateTime          @default(now())
+
+  programExercises ProgramExercise[]
+  sessionExercises SessionExercise[]
+
+  @@index([category])
+  @@index([muscleGroup])
+}
+
+model WorkoutProgram {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  description   String?
+  daysPerWeek   Int      @default(3)
+  durationWeeks Int      @default(8)
+  active        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  days ProgramDay[]
+
+  @@index([userId])
+}
+
+model ProgramDay {
+  id        String         @id @default(cuid())
+  programId String
+  program   WorkoutProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  dayNumber Int
+  name      String
+
+  exercises ProgramExercise[]
+
+  @@index([programId])
+}
+
+model ProgramExercise {
+  id          String     @id @default(cuid())
+  dayId       String
+  day         ProgramDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  exerciseId  String
+  exercise    Exercise   @relation(fields: [exerciseId], references: [id])
+  order       Int
+  sets        Int        @default(3)
+  reps        String     @default("8-12")
+  restSeconds Int        @default(90)
+  notes       String?
+
+  @@index([dayId])
+}
+
+model WorkoutSession {
+  id              String    @id @default(cuid())
+  userId          String
+  programId       String?
+  programDayId    String?
+  name            String?
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  durationSeconds Int?
+  notes           String?
+
+  exercises SessionExercise[]
+
+  @@index([userId])
+  @@index([startedAt])
+}
+
+model SessionExercise {
+  id         String         @id @default(cuid())
+  sessionId  String
+  session    WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId String
+  exercise   Exercise       @relation(fields: [exerciseId], references: [id])
+  order      Int
+  notes      String?
+
+  sets WorkoutSet[]
+
+  @@index([sessionId])
+}
+
+model WorkoutSet {
+  id                String          @id @default(cuid())
+  sessionExerciseId String
+  sessionExercise   SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+  setNumber         Int
+  reps              Int?
+  weightKg          Decimal?        @db.Decimal(6, 2)
+  durationSeconds   Int?
+  completed         Boolean         @default(false)
+
+  @@unique([sessionExerciseId, setNumber])
+  @@index([sessionExerciseId])
+}
