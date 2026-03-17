@@ -133,7 +133,7 @@ export default function SleepPage() {
                 <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} domain={[0, 12]} unit="h" />
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
-                  formatter={(v: number) => [`${v}h`, "Sleep"]}
+                  formatter={(v) => [`${v}h`, "Sleep"]}
                 />
                 <Line type="monotone" dataKey="hours" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
               </LineChart>
