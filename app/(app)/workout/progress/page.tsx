@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell,
@@ -324,8 +325,8 @@ export default function ProgressPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Progress</h1>
-          <p className="text-sm text-gray-500 mt-1">Volume, frequency, and personal records.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Progress</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Volume, frequency, and personal records.</p>
         </div>
         <div className="flex gap-1">
           {PERIODS.map((p) => (
@@ -457,17 +458,24 @@ export default function ProgressPage() {
                 {stats?.recentSessions.map((s) => (
                   <div key={s.id} className="flex items-center justify-between py-3 group">
                     <div>
-                      <p className="text-sm font-medium">{s.name ?? "Workout"}</p>
-                      <p className="text-xs text-gray-400">{new Date(s.startedAt).toLocaleDateString()} · {s.exerciseCount} exercises</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{s.name ?? "Workout"}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(s.startedAt).toLocaleDateString()} · {s.exerciseCount} exercises</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <p className="text-xs font-medium">{formatVolume(s.volume)}</p>
-                        <p className="text-xs text-gray-400">{formatDuration(s.durationSeconds)}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{formatDuration(s.durationSeconds)}</p>
                       </div>
+                      <Link
+                        href={`/workout/sessions/${s.id}/edit`}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
+                        title="Edit session"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Link>
                       <button
                         onClick={() => deleteSession(s.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-gray-600 hover:text-red-500"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

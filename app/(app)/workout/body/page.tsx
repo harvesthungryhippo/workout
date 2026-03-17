@@ -123,8 +123,8 @@ export default function BodyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Body Tracking</h1>
-          <p className="text-sm text-gray-500 mt-1">Log weight, body fat, and measurements.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Body Tracking</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Log weight, body fat, and measurements.</p>
         </div>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="h-4 w-4" />

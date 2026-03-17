@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark, Calculator, Target } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeProvider";
 
 const NAV = [
   { href: "/workout",             label: "Dashboard",  icon: Dumbbell },
@@ -27,9 +28,9 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r bg-white shrink-0">
-      <div className="flex h-16 items-center border-b px-5">
-        <span className="text-lg font-bold tracking-tight">Workout</span>
+    <aside className="flex h-screen w-56 flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+      <div className="flex h-16 items-center border-b border-gray-200 dark:border-gray-800 px-5">
+        <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Workout</span>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {NAV.map(({ href, label, icon: Icon }) => {
@@ -40,7 +41,9 @@ export default function Sidebar() {
               href={href}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                active
+                  ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
               )}
             >
               <Icon className="h-4 w-4" />
@@ -49,10 +52,11 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="border-t p-3">
+      <div className="border-t border-gray-200 dark:border-gray-800 p-3 space-y-1">
+        <ThemeToggle />
         <button
           onClick={logout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <LogOut className="h-4 w-4" />
           Sign out

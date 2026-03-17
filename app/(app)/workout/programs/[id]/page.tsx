@@ -79,7 +79,7 @@ export default function ProgramDetailPage() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900">{program.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{program.name}</h1>
               {program.active && <Badge>Active</Badge>}
             </div>
             {program.description && (

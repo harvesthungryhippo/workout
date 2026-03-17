@@ -13,10 +13,10 @@ export function Button({ className, variant = "default", size = "default", ...pr
       className={cn(
         "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
         {
-          "bg-gray-900 text-white hover:bg-gray-700": variant === "default",
-          "border border-gray-200 bg-white hover:bg-gray-50 text-gray-900": variant === "outline",
-          "hover:bg-gray-100 text-gray-700": variant === "ghost",
-          "bg-gray-100 text-gray-900 hover:bg-gray-200": variant === "secondary",
+          "bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-200": variant === "default",
+          "border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white": variant === "outline",
+          "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300": variant === "ghost",
+          "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700": variant === "secondary",
         },
         {
           "px-3 py-1.5 text-xs": size === "sm",
