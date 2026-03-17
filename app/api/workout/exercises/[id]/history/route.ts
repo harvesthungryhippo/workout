@@ -19,7 +19,8 @@ async function getHistory(req: AuthedRequest, ctx: Params) {
     orderBy: { session: { startedAt: "asc" } },
   });
 
-  const history = sessionExercises.map((se) => {
+  type SessionExerciseWithSets = (typeof sessionExercises)[number];
+  const history = sessionExercises.map((se: SessionExerciseWithSets) => {
     let maxWeight = 0;
     let maxReps = 0;
     let totalVolume = 0;
