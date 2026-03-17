@@ -23,6 +23,7 @@ async function getSession(req: AuthedRequest, ctx: Params) {
 
 // PATCH /api/workout/sessions/[id] — complete session or add notes
 const patchSchema = z.object({
+  name: z.string().nullable().optional(),
   notes: z.string().optional(),
   durationSeconds: z.number().int().min(0).optional(),
   completedAt: z.string().datetime().optional(),
@@ -46,6 +47,7 @@ async function updateSession(req: AuthedRequest, ctx: Params) {
   const updated = await prisma.workoutSession.update({
     where: { id },
     data: {
+      ...(body.name !== undefined ? { name: body.name } : {}),
       notes: body.notes,
       durationSeconds: body.durationSeconds,
       completedAt: body.completedAt ? new Date(body.completedAt) : undefined,

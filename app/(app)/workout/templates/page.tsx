@@ -54,8 +54,8 @@ export default function TemplatesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Templates</h1>
-        <p className="text-sm text-gray-500 mt-1">Saved workout templates. Create them by finishing a session and saving.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Templates</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Saved workout templates. Create them by finishing a session and saving.</p>
       </div>
 
       {loading ? (

@@ -149,8 +149,8 @@ export default function GoalsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Goals</h1>
-          <p className="text-sm text-gray-500 mt-1">Set targets and track your progress toward them.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Goals</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Set targets and track your progress toward them.</p>
         </div>
         <Button onClick={() => setShowForm(!showForm)} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -170,7 +170,7 @@ export default function GoalsPage() {
               <div className="space-y-1">
                 <Label>Type</Label>
                 <select
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                  className="flex h-9 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-1 text-sm shadow-sm"
                   value={form.unit}
                   onChange={field("unit")}
                 >
@@ -181,7 +181,7 @@ export default function GoalsPage() {
                 <div className="space-y-1">
                   <Label>Exercise</Label>
                   <select
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                    className="flex h-9 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-1 text-sm shadow-sm"
                     value={form.exerciseId}
                     onChange={field("exerciseId")}
                   >
@@ -252,7 +252,7 @@ export default function GoalsPage() {
                         {pct !== null && <span className="text-xs font-medium text-gray-700">{pct}%</span>}
                       </div>
                       {pct !== null && (
-                        <div className="ml-6 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="ml-6 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-green-500 rounded-full transition-all"
                             style={{ width: `${pct}%` }}
@@ -274,7 +274,7 @@ export default function GoalsPage() {
 
       {completed.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">Completed</h2>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">Completed</h2>
           <div className="space-y-2">
             {completed.map((goal) => (
               <Card key={goal.id} className="opacity-60">

@@ -62,10 +62,10 @@ function AddExerciseModal({ onClose, onAdded }: { onClose: () => void; onAdded: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-5">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Add Exercise</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Exercise</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X className="h-5 w-5" /></button>
         </div>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
@@ -75,20 +75,20 @@ function AddExerciseModal({ onClose, onAdded }: { onClose: () => void; onAdded: 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Category</Label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900">
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100">
                 {CATEGORIES.map((c) => <option key={c} value={c}>{muscleLabel(c)}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
               <Label>Muscle Group</Label>
-              <select value={muscleGroup} onChange={(e) => setMuscleGroup(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900">
+              <select value={muscleGroup} onChange={(e) => setMuscleGroup(e.target.value)} className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100">
                 {MUSCLE_GROUPS.filter(m => m !== "All").map((m) => <option key={m} value={m}>{muscleLabel(m)}</option>)}
               </select>
             </div>
           </div>
           <div className="space-y-1.5">
             <Label>Equipment</Label>
-            <select value={equipment} onChange={(e) => setEquipment(e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900">
+            <select value={equipment} onChange={(e) => setEquipment(e.target.value)} className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100">
               {EQUIPMENT.filter(e => e !== "All").map((e) => <option key={e} value={e}>{muscleLabel(e)}</option>)}
             </select>
           </div>
@@ -146,8 +146,8 @@ export default function ExercisesPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Exercise Library</h1>
-          <p className="text-sm text-gray-500 mt-1">Browse and search all available exercises.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Exercise Library</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Browse and search all available exercises.</p>
         </div>
         <Button size="sm" className="gap-2" onClick={() => setShowModal(true)}>
           <Plus className="h-4 w-4" />

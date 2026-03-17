@@ -94,8 +94,8 @@ export default function WorkoutPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Workout</h1>
-          <p className="text-sm text-gray-500 mt-1">Track sessions, follow programs, and monitor progress.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track sessions, follow programs, and monitor progress.</p>
         </div>
         <Link href="/workout/log">
           <Button className="gap-2">
@@ -164,16 +164,16 @@ export default function WorkoutPage() {
             ) : (
               <div className="space-y-2">
                 {stats?.recentSessions.slice(0, 5).map((s) => (
-                  <div key={s.id} className="flex items-center justify-between rounded-lg border px-3 py-2.5">
+                  <div key={s.id} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
                     <div>
                       <p className="text-sm font-medium">{s.name ?? "Workout"}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(s.startedAt).toLocaleDateString()} · {s.exerciseCount} exercises
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-medium">{formatVolume(s.volume)}</p>
-                      <p className="text-xs text-gray-400">{formatDuration(s.durationSeconds)}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{formatDuration(s.durationSeconds)}</p>
                     </div>
                   </div>
                 ))}
@@ -196,7 +196,7 @@ export default function WorkoutPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Sessions</p>
-                    <p className="text-xs text-gray-400">Last week: {stats?.weekly.lastSessions ?? 0}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Last week: {stats?.weekly.lastSessions ?? 0}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold">{stats?.weekly.thisSessions ?? 0}</p>
@@ -211,7 +211,7 @@ export default function WorkoutPage() {
                 <div className="flex items-center justify-between border-t pt-4">
                   <div>
                     <p className="text-sm font-medium">Volume</p>
-                    <p className="text-xs text-gray-400">Last week: {formatVolume(stats?.weekly.lastVolume ?? 0)}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Last week: {formatVolume(stats?.weekly.lastVolume ?? 0)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold">{formatVolume(stats?.weekly.thisVolume ?? 0)}</p>
@@ -223,12 +223,12 @@ export default function WorkoutPage() {
                     )}
                   </div>
                 </div>
-                <Link href="/workout/goals" className="flex items-center justify-between rounded-lg border px-4 py-3 text-sm hover:bg-gray-50 transition-colors mt-2">
+                <Link href="/workout/goals" className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mt-2">
                   <div className="flex items-center gap-3">
                     <Target className="h-4 w-4 text-gray-400" />
                     <span>View goals</span>
                   </div>
-                  <span className="text-gray-400">→</span>
+                  <span className="text-gray-400 dark:text-gray-500">→</span>
                 </Link>
               </>
             )}

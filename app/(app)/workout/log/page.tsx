@@ -309,8 +309,8 @@ export default function LogWorkoutPage() {
             <ArrowLeft className="h-3.5 w-3.5" />
             Back
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">{session.name ?? "Workout"}</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{session.name ?? "Workout"}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {completedSets}/{totalSets} sets completed
           </p>
         </div>
@@ -359,11 +359,11 @@ export default function LogWorkoutPage() {
                   {ex.exercise.name}
                   {allDone && <Badge className="text-xs gap-1"><Check className="h-3 w-3" />Done</Badge>}
                 </CardTitle>
-                <p className="text-xs text-gray-400 mt-0.5">{muscleLabel(ex.exercise.muscleGroup)}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{muscleLabel(ex.exercise.muscleGroup)}</p>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-4 gap-2 text-xs text-gray-400 mb-2 px-1">
+              <div className="grid grid-cols-4 gap-2 text-xs text-gray-400 dark:text-gray-500 mb-2 px-1">
                 <span>Set</span><span>Reps</span><span>Weight (lb)</span><span></span>
               </div>
               <div className="space-y-2">
@@ -408,7 +408,7 @@ export default function LogWorkoutPage() {
               </div>
               <button
                 onClick={() => addSet(ex)}
-                className="mt-2 flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+                className="mt-2 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
               >
                 <Plus className="h-3 w-3" />
                 Add set
@@ -430,10 +430,10 @@ export default function LogWorkoutPage() {
       {/* Exercise picker modal */}
       {showPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[70vh]">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-base font-semibold">Add Exercise</h2>
-              <button onClick={() => setShowPicker(false)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[70vh]">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Add Exercise</h2>
+              <button onClick={() => setShowPicker(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-3 border-b">
               <div className="relative">
@@ -453,11 +453,11 @@ export default function LogWorkoutPage() {
                 .map((ex) => (
                   <button
                     key={ex.id}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center justify-between"
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-between"
                     onClick={() => addExerciseToSession(ex)}
                   >
-                    <span className="text-sm font-medium">{ex.name}</span>
-                    <span className="text-xs text-gray-400">{ex.muscleGroup.replace(/_/g, " ")}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{ex.name}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{ex.muscleGroup.replace(/_/g, " ")}</span>
                   </button>
                 ))}
             </div>

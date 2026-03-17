@@ -63,8 +63,8 @@ export default function OneRMPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">1RM Calculator</h1>
-        <p className="text-sm text-gray-500 mt-1">Estimate your one-rep max from any set.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">1RM Calculator</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Estimate your one-rep max from any set.</p>
       </div>
 
       {/* Manual calculator */}
@@ -141,8 +141,8 @@ export default function OneRMPage() {
                 return (
                   <div key={pr.exerciseName} className="flex items-center justify-between py-2.5">
                     <div>
-                      <p className="text-sm font-medium">{pr.exerciseName}</p>
-                      <p className="text-xs text-gray-400">Best set: {pr.maxWeight} lb × {pr.maxReps}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{pr.exerciseName}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Best set: {pr.maxWeight} lb × {pr.maxReps}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold">{est ? `~${est} lb` : "—"}</p>
@@ -156,7 +156,7 @@ export default function OneRMPage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-gray-50 border-gray-200">
+      <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="pt-4">
           <p className="text-xs text-gray-500">
             <strong>Note:</strong> These are estimates using the Epley and Brzycki formulas, averaged together.

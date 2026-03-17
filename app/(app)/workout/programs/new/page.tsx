@@ -156,7 +156,7 @@ export default function NewProgramPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to programs
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">New Program</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">New Program</h1>
       </div>
 
       {/* Basic Info */}
