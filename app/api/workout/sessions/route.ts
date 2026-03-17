@@ -99,23 +99,27 @@ async function createSession(req: AuthedRequest) {
     }
   }
 
-  const session = await prisma.workoutSession.create({
-    data: {
-      userId: req.session.userId,
-      name: body.name,
-      programId: body.programId,
-      programDayId: body.programDayId,
-      exercises: exercisesData.length > 0 ? { create: exercisesData } : undefined,
-    },
-    include: {
-      exercises: {
-        include: { exercise: true, sets: { orderBy: { setNumber: "asc" } } },
-        orderBy: { order: "asc" },
+  try {
+    const session = await prisma.workoutSession.create({
+      data: {
+        userId: req.session.userId,
+        name: body.name,
+        programId: body.programId,
+        programDayId: body.programDayId,
+        exercises: exercisesData.length > 0 ? { create: exercisesData } : undefined,
       },
-    },
-  });
-
-  return NextResponse.json(session, { status: 201 });
+      include: {
+        exercises: {
+          include: { exercise: true, sets: { orderBy: { setNumber: "asc" } } },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+    return NextResponse.json(session, { status: 201 });
+  } catch (e) {
+    console.error("session create error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export const GET = withAuth(getSessions);
