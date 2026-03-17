@@ -419,7 +419,7 @@ export default function CardioPage() {
                   <Button onClick={handlePause} variant="outline" className="gap-2">
                     <Pause className="h-4 w-4" /> Pause
                   </Button>
-                  <Button onClick={handleStop} variant="destructive" className="gap-2">
+                  <Button onClick={handleStop} className="gap-2 bg-red-600 hover:bg-red-700 text-white">
                     <Square className="h-4 w-4" /> Finish
                   </Button>
                 </>
@@ -429,7 +429,7 @@ export default function CardioPage() {
                   <Button onClick={handleResume} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
                     <Play className="h-4 w-4" /> Resume
                   </Button>
-                  <Button onClick={handleStop} variant="destructive" className="gap-2">
+                  <Button onClick={handleStop} className="gap-2 bg-red-600 hover:bg-red-700 text-white">
                     <Square className="h-4 w-4" /> Finish
                   </Button>
                 </>
