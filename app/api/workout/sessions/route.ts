@@ -36,6 +36,7 @@ const createSchema = z.object({
   name: z.string().optional(),
   programId: z.string().optional(),
   programDayId: z.string().optional(),
+  templateId: z.string().optional(),
 });
 
 async function createSession(req: AuthedRequest) {
@@ -67,6 +68,27 @@ async function createSession(req: AuthedRequest) {
         notes: pe.notes,
         sets: {
           create: Array.from({ length: pe.sets }, (_, i) => ({
+            setNumber: i + 1,
+            reps: null,
+            weightKg: null,
+            completed: false as const,
+          })),
+        },
+      }));
+    }
+  } else if (body.templateId) {
+    const template = await prisma.workoutTemplate.findFirst({
+      where: { id: body.templateId },
+      include: { exercises: { orderBy: { order: "asc" } } },
+    });
+
+    if (template) {
+      exercisesData = template.exercises.map((te) => ({
+        exerciseId: te.exerciseId,
+        order: te.order,
+        notes: null,
+        sets: {
+          create: Array.from({ length: te.sets }, (_, i) => ({
             setNumber: i + 1,
             reps: null,
             weightKg: null,

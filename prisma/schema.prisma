@@ -55,8 +55,9 @@ model Exercise {
   instructions String?
   createdAt    DateTime          @default(now())
 
-  programExercises ProgramExercise[]
-  sessionExercises SessionExercise[]
+  programExercises  ProgramExercise[]
+  sessionExercises  SessionExercise[]
+  templateExercises TemplateExercise[]
 
   @@index([category])
   @@index([muscleGroup])
@@ -148,4 +149,47 @@ model WorkoutSet {
 
   @@unique([sessionExerciseId, setNumber])
   @@index([sessionExerciseId])
+}
+
+model BodyEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  date       DateTime @default(now())
+  weightLbs  Decimal? @db.Decimal(5, 1)
+  bodyFatPct Decimal? @db.Decimal(4, 1)
+  neckIn     Decimal? @db.Decimal(4, 1)
+  chestIn    Decimal? @db.Decimal(4, 1)
+  waistIn    Decimal? @db.Decimal(4, 1)
+  hipsIn     Decimal? @db.Decimal(4, 1)
+  armsIn     Decimal? @db.Decimal(4, 1)
+  thighsIn   Decimal? @db.Decimal(4, 1)
+  notes      String?
+
+  @@index([userId])
+  @@index([date])
+}
+
+model WorkoutTemplate {
+  id        String             @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime           @default(now())
+
+  exercises TemplateExercise[]
+
+  @@index([userId])
+}
+
+model TemplateExercise {
+  id          String          @id @default(cuid())
+  templateId  String
+  template    WorkoutTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  exerciseId  String
+  exercise    Exercise        @relation(fields: [exerciseId], references: [id])
+  order       Int
+  sets        Int             @default(3)
+  reps        String          @default("8-12")
+  restSeconds Int             @default(90)
+
+  @@index([templateId])
 }
