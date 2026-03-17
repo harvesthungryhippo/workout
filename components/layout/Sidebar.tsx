@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark, Calculator } from "lucide-react";
+import { Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark, Calculator, Target } from "lucide-react";
 
 const NAV = [
   { href: "/workout",             label: "Dashboard",  icon: Dumbbell },
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/workout/templates",   label: "Templates",  icon: Bookmark },
   { href: "/workout/exercises",   label: "Exercises",  icon: BookOpen },
   { href: "/workout/progress",    label: "Progress",   icon: BarChart2 },
+  { href: "/workout/goals",       label: "Goals",      icon: Target },
   { href: "/workout/body",        label: "Body",       icon: Scale },
   { href: "/workout/1rm",         label: "1RM Calc",   icon: Calculator },
 ];

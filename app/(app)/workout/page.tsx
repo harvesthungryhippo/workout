@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play } from "lucide-react";
+import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target } from "lucide-react";
 import Link from "next/link";
 
 interface Stats {
@@ -13,6 +13,8 @@ interface Stats {
   sessionsPerWeek: number;
   totalVolume: number;
   volumeTrend: number;
+  currentStreak: number;
+  longestStreak: number;
   prs: { exerciseName: string; maxWeight: number; maxReps: number }[];
   recentSessions: {
     id: string;
@@ -23,6 +25,12 @@ interface Stats {
     exerciseCount: number;
     volume: number;
   }[];
+  weekly: {
+    thisSessions: number;
+    lastSessions: number;
+    thisVolume: number;
+    lastVolume: number;
+  };
 }
 
 interface ActiveProgram {
@@ -119,9 +127,9 @@ export default function WorkoutPage() {
               sub={stats?.volumeTrend ? `${stats.volumeTrend > 0 ? "+" : ""}${stats.volumeTrend}% vs prev month` : undefined}
             />
             <StatCard
-              title="PRs Tracked"
-              value={stats?.prs.length ?? 0}
-              description="Exercises with logged history"
+              title="Current Streak"
+              value={`${stats?.currentStreak ?? 0} days`}
+              description={`Best: ${stats?.longestStreak ?? 0} days`}
               icon={Flame}
             />
             <StatCard
@@ -174,31 +182,56 @@ export default function WorkoutPage() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
+        {/* Weekly Summary */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Quick Actions</CardTitle>
-            <CardDescription>Jump to what you need</CardDescription>
+            <CardTitle className="text-base">This Week</CardTitle>
+            <CardDescription>vs. last week</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {[
-              { label: "Start a session", href: "/workout/log", icon: Play },
-              { label: "Browse programs", href: "/workout/programs", icon: Calendar },
-              { label: "Exercise library", href: "/workout/exercises", icon: Dumbbell },
-              { label: "View progress", href: "/workout/progress", icon: TrendingUp },
-            ].map(({ label, href, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center justify-between rounded-lg border px-4 py-3 text-sm hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className="h-4 w-4 text-gray-400" />
-                  <span>{label}</span>
+          <CardContent className="space-y-4">
+            {loading ? (
+              <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Sessions</p>
+                    <p className="text-xs text-gray-400">Last week: {stats?.weekly.lastSessions ?? 0}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold">{stats?.weekly.thisSessions ?? 0}</p>
+                    {(stats?.weekly.lastSessions ?? 0) > 0 && (
+                      <p className={`text-xs font-medium ${(stats?.weekly.thisSessions ?? 0) >= (stats?.weekly.lastSessions ?? 0) ? "text-green-600" : "text-red-500"}`}>
+                        {(stats?.weekly.thisSessions ?? 0) >= (stats?.weekly.lastSessions ?? 0) ? "+" : ""}
+                        {(stats?.weekly.thisSessions ?? 0) - (stats?.weekly.lastSessions ?? 0)} vs last
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <span className="text-gray-400">→</span>
-              </Link>
-            ))}
+                <div className="flex items-center justify-between border-t pt-4">
+                  <div>
+                    <p className="text-sm font-medium">Volume</p>
+                    <p className="text-xs text-gray-400">Last week: {formatVolume(stats?.weekly.lastVolume ?? 0)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{formatVolume(stats?.weekly.thisVolume ?? 0)}</p>
+                    {(stats?.weekly.lastVolume ?? 0) > 0 && (
+                      <p className={`text-xs font-medium ${(stats?.weekly.thisVolume ?? 0) >= (stats?.weekly.lastVolume ?? 0) ? "text-green-600" : "text-red-500"}`}>
+                        {(stats?.weekly.thisVolume ?? 0) >= (stats?.weekly.lastVolume ?? 0) ? "+" : ""}
+                        {Math.round(((stats?.weekly.thisVolume ?? 0) - (stats?.weekly.lastVolume ?? 0)) / Math.max(stats?.weekly.lastVolume ?? 1, 1) * 100)}% vs last
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Link href="/workout/goals" className="flex items-center justify-between rounded-lg border px-4 py-3 text-sm hover:bg-gray-50 transition-colors mt-2">
+                  <div className="flex items-center gap-3">
+                    <Target className="h-4 w-4 text-gray-400" />
+                    <span>View goals</span>
+                  </div>
+                  <span className="text-gray-400">→</span>
+                </Link>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

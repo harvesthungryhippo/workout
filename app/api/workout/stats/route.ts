@@ -13,7 +13,7 @@ async function getStats(req: AuthedRequest) {
     prisma.workoutSession.findMany({
       where: { userId: req.session.userId, startedAt: { gte: since }, completedAt: { not: null } },
       include: {
-        exercises: { include: { sets: true } },
+        exercises: { include: { exercise: { select: { muscleGroup: true } }, sets: true } },
       },
     }),
     prisma.workoutSession.findMany({
@@ -28,11 +28,13 @@ async function getStats(req: AuthedRequest) {
     prisma.workoutSession.findMany({
       where: { userId: req.session.userId, completedAt: { not: null } },
       include: { exercises: { include: { exercise: true, sets: true } } },
+      orderBy: { startedAt: "asc" },
     }),
   ]);
 
+  type SessionLike = { exercises: { sets: { completed: boolean; reps: number | null; weightKg: { toString(): string } | null }[] }[] };
   // Total volume per session
-  const calcVolume = (s: typeof sessions) =>
+  const calcVolume = (s: SessionLike[]) =>
     s.reduce((acc, session) => {
       const v = session.exercises.reduce((a, ex) => {
         return (
@@ -55,7 +57,7 @@ async function getStats(req: AuthedRequest) {
   const prevSessionsPerWeek = prevSessions.length / (days / 7);
 
   // PRs per exercise: max weight and max reps at any weight
-  const prs: Record<string, { exerciseName: string; maxWeight: number; maxReps: number; maxVolume: number }> = {};
+  const prs: Record<string, { exerciseName: string; exerciseId: string; maxWeight: number; maxReps: number; maxVolume: number }> = {};
 
   for (const session of allSessions) {
     for (const ex of session.exercises) {
@@ -63,6 +65,7 @@ async function getStats(req: AuthedRequest) {
       if (!prs[key]) {
         prs[key] = {
           exerciseName: ex.exercise.name,
+          exerciseId: ex.exerciseId,
           maxWeight: 0,
           maxReps: 0,
           maxVolume: 0,
@@ -117,6 +120,64 @@ async function getStats(req: AuthedRequest) {
     }, 0),
   }));
 
+  // Streak calculation (consecutive days with a completed workout)
+  const workoutDays = new Set(allSessions.map((s) => s.startedAt.toISOString().slice(0, 10)));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let currentStreak = 0;
+  const cursor = new Date(today);
+  // Allow today or yesterday to count (don't break streak if you haven't worked out yet today)
+  if (!workoutDays.has(cursor.toISOString().slice(0, 10))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  while (workoutDays.has(cursor.toISOString().slice(0, 10))) {
+    currentStreak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  let longestStreak = 0;
+  let streak = 0;
+  const sortedDays = Array.from(workoutDays).sort();
+  for (let i = 0; i < sortedDays.length; i++) {
+    if (i === 0) {
+      streak = 1;
+    } else {
+      const prev = new Date(sortedDays[i - 1]);
+      const curr = new Date(sortedDays[i]);
+      const diff = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+      streak = diff === 1 ? streak + 1 : 1;
+    }
+    if (streak > longestStreak) longestStreak = streak;
+  }
+
+  // Volume by muscle group for the current period
+  const muscleGroupVolume: Record<string, number> = {};
+  for (const session of sessions) {
+    for (const ex of session.exercises) {
+      const mg = ex.exercise.muscleGroup as string;
+      const vol = ex.sets.reduce((a, set) => {
+        if (!set.completed || !set.reps || !set.weightKg) return a;
+        return a + set.reps * Number(set.weightKg);
+      }, 0);
+      muscleGroupVolume[mg] = (muscleGroupVolume[mg] ?? 0) + vol;
+    }
+  }
+
+  // Weekly sessions: this week vs last week
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(weekStart.getDate() - 7);
+
+  const thisWeekSessions = allSessions.filter((s) => s.startedAt >= weekStart).length;
+  const lastWeekSessions = allSessions.filter(
+    (s) => s.startedAt >= lastWeekStart && s.startedAt < weekStart
+  ).length;
+
+  const thisWeekVolume = calcVolume(allSessions.filter((s) => s.startedAt >= weekStart));
+  const lastWeekVolume = calcVolume(allSessions.filter((s) => s.startedAt >= lastWeekStart && s.startedAt < weekStart));
+
   return NextResponse.json({
     period: { days, since, prevSince },
     sessionCount: sessions.length,
@@ -129,6 +190,15 @@ async function getStats(req: AuthedRequest) {
     prs: Object.values(prs).sort((a, b) => b.maxVolume - a.maxVolume),
     recentSessions,
     dayMap,
+    currentStreak,
+    longestStreak,
+    muscleGroupVolume,
+    weekly: {
+      thisSessions: thisWeekSessions,
+      lastSessions: lastWeekSessions,
+      thisVolume: Math.round(thisWeekVolume),
+      lastVolume: Math.round(lastWeekVolume),
+    },
   });
 }
 
