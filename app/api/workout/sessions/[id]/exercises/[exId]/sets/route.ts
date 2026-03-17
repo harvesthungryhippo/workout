@@ -10,6 +10,7 @@ const updateSchema = z.object({
   weightKg: z.number().min(0).optional(),
   durationSeconds: z.number().int().min(0).optional(),
   completed: z.boolean().optional(),
+  rpe: z.number().int().min(1).max(10).optional(),
 });
 
 async function updateSet(req: AuthedRequest, ctx: Params) {
@@ -45,6 +46,7 @@ async function updateSet(req: AuthedRequest, ctx: Params) {
       weightKg: body.weightKg,
       durationSeconds: body.durationSeconds,
       completed: body.completed,
+      rpe: body.rpe,
     },
     create: {
       sessionExerciseId: exId,
@@ -53,6 +55,7 @@ async function updateSet(req: AuthedRequest, ctx: Params) {
       weightKg: body.weightKg,
       durationSeconds: body.durationSeconds,
       completed: body.completed ?? false,
+      rpe: body.rpe,
     },
   });
 
