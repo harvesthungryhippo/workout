@@ -273,3 +273,22 @@ model WorkoutReminder {
 
   @@index([userId])
 }
+
+model CardioSession {
+  id              String    @id @default(cuid())
+  userId          String
+  type            String    // "running" | "walking"
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  durationSeconds Int?
+  distanceMeters  Float?
+  calories        Int?
+  avgPaceSecPerKm Float?
+  avgHeartRate    Int?
+  maxHeartRate    Int?
+  notes           String?
+  route           Json?     // optional GPS waypoints [{lat,lng,ts}]
+
+  @@index([userId])
+  @@index([startedAt])
+}

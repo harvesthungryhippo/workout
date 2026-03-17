@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark,
   Calculator, Target, Utensils, Droplets, Moon, Activity, Bell, TrendingUp,
-  Download, Settings, ChevronDown, ChevronRight,
+  Download, Settings, ChevronDown, ChevronRight, Zap,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeProvider";
 
@@ -21,6 +21,7 @@ const NAV_PRIMARY = [
   { href: "/workout/progress",  label: "Progress",   icon: BarChart2 },
   { href: "/workout/overload",  label: "Overload",   icon: TrendingUp },
   { href: "/workout/goals",     label: "Goals",      icon: Target },
+  { href: "/workout/cardio",    label: "Cardio",     icon: Zap },
 ];
 
 const NAV_HEALTH = [
