@@ -7,9 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search } from "lucide-react";
+import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+
+function requestNotificationPermission() {
+  if (typeof Notification !== "undefined" && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function sendRestNotification(exerciseName: string) {
+  if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+    new Notification("Rest complete!", {
+      body: `Time to do your next set of ${exerciseName}`,
+      icon: "/favicon.ico",
+    });
+  }
+}
 
 interface WorkoutSet {
   id: string;
@@ -36,10 +51,12 @@ interface Session {
   exercises: SessionExercise[];
 }
 
-function useTimer() {
+function useTimer(onDone?: () => void) {
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
 
   const start = useCallback((s: number) => {
     setSeconds(s);
@@ -56,7 +73,11 @@ function useTimer() {
     if (running) {
       intervalRef.current = setInterval(() => {
         setSeconds((s) => {
-          if (s <= 1) { setRunning(false); return 0; }
+          if (s <= 1) {
+            setRunning(false);
+            onDoneRef.current?.();
+            return 0;
+          }
           return s - 1;
         });
       }, 1000);
@@ -76,6 +97,7 @@ export default function LogWorkoutPage() {
   const router = useRouter();
   const programDayId = searchParams.get("programDayId") ?? undefined;
   const programId = searchParams.get("programId") ?? undefined;
+  const templateId = searchParams.get("templateId") ?? undefined;
   const sessionName = searchParams.get("name") ?? undefined;
 
   const [session, setSession] = useState<Session | null>(null);
@@ -85,18 +107,23 @@ export default function LogWorkoutPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [allExercises, setAllExercises] = useState<{ id: string; name: string; muscleGroup: string }[]>([]);
   const [exSearch, setExSearch] = useState("");
-  const timer = useTimer();
+  const [timerExName, setTimerExName] = useState("");
+  const timer = useTimer(useCallback(() => sendRestNotification(timerExName), [timerExName]));
   const [timerLabel, setTimerLabel] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const sessionRef = useRef<Session | null>(null);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
+
+  // Request notification permission on mount
+  useEffect(() => { requestNotificationPermission(); }, []);
 
   // Start session on mount
   useEffect(() => {
     fetch("/api/workout/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: sessionName, programId, programDayId }),
+      body: JSON.stringify({ name: sessionName, programId, programDayId, templateId }),
     })
       .then((r) => r.json())
       .then((s) => { setSession(s); initInputs(s); })
@@ -161,6 +188,7 @@ export default function LogWorkoutPage() {
       // Start rest timer
       const restSec = ex.restSeconds ?? 90;
       timer.start(restSec);
+      setTimerExName(ex.exercise.name);
       setTimerLabel(`Rest: ${ex.exercise.name}`);
     }
   }
@@ -230,6 +258,32 @@ export default function LogWorkoutPage() {
       router.push("/workout");
     }
     setCompleting(false);
+  }
+
+  async function saveAsTemplate() {
+    if (!session || session.exercises.length === 0) {
+      toast.error("Add some exercises first.");
+      return;
+    }
+    setSavingTemplate(true);
+    const exercises = session.exercises.map((ex, i) => ({
+      exerciseId: ex.exercise.id,
+      order: i,
+      sets: ex.sets.length || 3,
+      reps: "8-12",
+      restSeconds: ex.restSeconds ?? 90,
+    }));
+    const res = await fetch("/api/workout/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: session.name ?? "My Template", exercises }),
+    });
+    if (res.ok) {
+      toast.success("Saved as template!");
+    } else {
+      toast.error("Failed to save template.");
+    }
+    setSavingTemplate(false);
   }
 
   if (loading) {
@@ -411,10 +465,20 @@ export default function LogWorkoutPage() {
         </div>
       )}
 
-      <div className="pb-8">
+      <div className="pb-8 space-y-2">
         <Button onClick={finishSession} disabled={completing} className="w-full gap-2" size="lg">
           <CheckCircle2 className="h-4 w-4" />
           {completing ? "Saving..." : "Finish Session"}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={saveAsTemplate}
+          disabled={savingTemplate}
+          className="w-full gap-2"
+          size="sm"
+        >
+          <BookmarkPlus className="h-4 w-4" />
+          {savingTemplate ? "Saving..." : "Save as Template"}
         </Button>
       </div>
     </div>
