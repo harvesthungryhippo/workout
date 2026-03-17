@@ -134,7 +134,14 @@ export default function LogWorkoutPage() {
       body: JSON.stringify({ name: sessionName, programId, programDayId, templateId }),
     })
       .then((r) => r.json())
-      .then((s) => { setSession(s); initInputs(s); })
+      .then((s) => {
+        if (s && Array.isArray(s.exercises)) {
+          setSession(s);
+          initInputs(s);
+        } else {
+          console.error("session create failed:", s);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps

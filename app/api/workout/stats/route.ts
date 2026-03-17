@@ -4,6 +4,7 @@ import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 // GET /api/workout/stats — progress stats for the current user
 async function getStats(req: AuthedRequest) {
+  try {
   const { searchParams } = new URL(req.url);
   const days = parseInt(searchParams.get("days") ?? "30");
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -178,28 +179,32 @@ async function getStats(req: AuthedRequest) {
   const thisWeekVolume = calcVolume(allSessions.filter((s) => s.startedAt >= weekStart));
   const lastWeekVolume = calcVolume(allSessions.filter((s) => s.startedAt >= lastWeekStart && s.startedAt < weekStart));
 
-  return NextResponse.json({
-    period: { days, since, prevSince },
-    sessionCount: sessions.length,
-    prevSessionCount: prevSessions.length,
-    sessionsPerWeek: Math.round(sessionsPerWeek * 10) / 10,
-    prevSessionsPerWeek: Math.round(prevSessionsPerWeek * 10) / 10,
-    totalVolume: Math.round(totalVolume),
-    prevVolume: Math.round(prevVolume),
-    volumeTrend: Math.round(volumeTrend),
-    prs: Object.values(prs).sort((a, b) => b.maxVolume - a.maxVolume),
-    recentSessions,
-    dayMap,
-    currentStreak,
-    longestStreak,
-    muscleGroupVolume,
-    weekly: {
-      thisSessions: thisWeekSessions,
-      lastSessions: lastWeekSessions,
-      thisVolume: Math.round(thisWeekVolume),
-      lastVolume: Math.round(lastWeekVolume),
-    },
-  });
+    return NextResponse.json({
+      period: { days, since, prevSince },
+      sessionCount: sessions.length,
+      prevSessionCount: prevSessions.length,
+      sessionsPerWeek: Math.round(sessionsPerWeek * 10) / 10,
+      prevSessionsPerWeek: Math.round(prevSessionsPerWeek * 10) / 10,
+      totalVolume: Math.round(totalVolume),
+      prevVolume: Math.round(prevVolume),
+      volumeTrend: Math.round(volumeTrend),
+      prs: Object.values(prs).sort((a, b) => b.maxVolume - a.maxVolume),
+      recentSessions,
+      dayMap,
+      currentStreak,
+      longestStreak,
+      muscleGroupVolume,
+      weekly: {
+        thisSessions: thisWeekSessions,
+        lastSessions: lastWeekSessions,
+        thisVolume: Math.round(thisWeekVolume),
+        lastVolume: Math.round(lastWeekVolume),
+      },
+    });
+  } catch (e) {
+    console.error("stats error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export const GET = withAuth(getStats);
