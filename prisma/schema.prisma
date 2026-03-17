@@ -43,6 +43,7 @@ model WorkoutUser {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  name         String?
   createdAt    DateTime @default(now())
 }
 
@@ -125,13 +126,14 @@ model WorkoutSession {
 }
 
 model SessionExercise {
-  id         String         @id @default(cuid())
-  sessionId  String
-  session    WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  exerciseId String
-  exercise   Exercise       @relation(fields: [exerciseId], references: [id])
-  order      Int
-  notes      String?
+  id             String         @id @default(cuid())
+  sessionId      String
+  session        WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId     String
+  exercise       Exercise       @relation(fields: [exerciseId], references: [id])
+  order          Int
+  notes          String?
+  supersetGroup  Int?           // exercises sharing same value form a superset
 
   sets WorkoutSet[]
 
@@ -147,6 +149,7 @@ model WorkoutSet {
   weightKg          Decimal?        @db.Decimal(6, 2)
   durationSeconds   Int?
   completed         Boolean         @default(false)
+  rpe               Int?            // Rate of Perceived Exertion 1-10
 
   @@unique([sessionExerciseId, setNumber])
   @@index([sessionExerciseId])
@@ -207,6 +210,66 @@ model Goal {
   notes       String?
   createdAt   DateTime  @default(now())
   completedAt DateTime?
+
+  @@index([userId])
+}
+
+model NutritionEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @default(now())
+  mealName  String
+  calories  Int?
+  proteinG  Decimal? @db.Decimal(6, 1)
+  carbsG    Decimal? @db.Decimal(6, 1)
+  fatG      Decimal? @db.Decimal(6, 1)
+  notes     String?
+
+  @@index([userId])
+  @@index([date])
+}
+
+model WaterEntry {
+  id       String   @id @default(cuid())
+  userId   String
+  date     DateTime @default(now())
+  amountMl Int
+
+  @@index([userId])
+  @@index([date])
+}
+
+model SleepEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime @default(now())
+  durationMins Int
+  quality      Int?     // 1-5 rating
+  notes        String?
+
+  @@index([userId])
+  @@index([date])
+}
+
+model RecoveryEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  date          DateTime @default(now())
+  overallScore  Int?     // 1-10
+  sorenessAreas String[] // muscle group keys
+  notes         String?
+
+  @@index([userId])
+  @@index([date])
+}
+
+model WorkoutReminder {
+  id        String   @id @default(cuid())
+  userId    String
+  dayOfWeek Int      // 0=Sun … 6=Sat
+  time      String   // "HH:MM"
+  label     String?
+  enabled   Boolean  @default(true)
 
   @@index([userId])
 }
