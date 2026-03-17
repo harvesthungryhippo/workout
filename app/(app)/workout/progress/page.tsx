@@ -5,8 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, Trophy, Trash2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame } from "lucide-react";
 import { toast } from "sonner";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart, Bar, Cell,
+} from "recharts";
 
 interface DayData { count: number; volume: number; }
 
@@ -18,7 +22,10 @@ interface Stats {
   totalVolume: number;
   prevVolume: number;
   volumeTrend: number;
-  prs: { exerciseName: string; maxWeight: number; maxReps: number; maxVolume: number }[];
+  currentStreak: number;
+  longestStreak: number;
+  muscleGroupVolume: Record<string, number>;
+  prs: { exerciseName: string; exerciseId: string; maxWeight: number; maxReps: number; maxVolume: number }[];
   recentSessions: {
     id: string; name: string | null; startedAt: string;
     completedAt: string | null; durationSeconds: number | null;
@@ -27,9 +34,18 @@ interface Stats {
   dayMap: Record<string, DayData>;
 }
 
+interface HistoryPoint { date: string; maxWeight: number; maxReps: number; totalVolume: number }
+
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const PERIODS = [7, 30, 90];
+
+const MUSCLE_COLORS: Record<string, string> = {
+  CHEST: "#6366f1", BACK: "#8b5cf6", SHOULDERS: "#a78bfa",
+  BICEPS: "#ec4899", TRICEPS: "#f43f5e", FOREARMS: "#f97316",
+  CORE: "#eab308", QUADS: "#22c55e", HAMSTRINGS: "#10b981",
+  GLUTES: "#14b8a6", CALVES: "#06b6d4", FULL_BODY: "#3b82f6",
+};
 
 function TrendBadge({ trend }: { trend: number }) {
   if (trend > 0) return <Badge className="gap-1 bg-green-100 text-green-700 hover:bg-green-100"><TrendingUp className="h-3 w-3" />+{trend}%</Badge>;
@@ -52,15 +68,11 @@ function buildGrid() {
   today.setHours(0, 0, 0, 0);
   const start = new Date(today);
   start.setDate(start.getDate() - 364 - start.getDay());
-
   const weeks: Date[][] = [];
   const current = new Date(start);
   while (current <= today) {
     const week: Date[] = [];
-    for (let d = 0; d < 7; d++) {
-      week.push(new Date(current));
-      current.setDate(current.getDate() + 1);
-    }
+    for (let d = 0; d < 7; d++) { week.push(new Date(current)); current.setDate(current.getDate() + 1); }
     weeks.push(week);
   }
   return weeks;
@@ -79,42 +91,27 @@ function cellColor(day: Date, dayMap: Record<string, DayData>, today: Date) {
 
 function Heatmap({ dayMap }: { dayMap: Record<string, DayData> }) {
   const weeks = buildGrid();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
-
   const monthLabels: { label: string; col: number }[] = [];
   weeks.forEach((week, i) => {
-    if (i === 0 || week[0].getMonth() !== weeks[i - 1][0].getMonth()) {
+    if (i === 0 || week[0].getMonth() !== weeks[i - 1][0].getMonth())
       monthLabels.push({ label: MONTHS[week[0].getMonth()], col: i });
-    }
   });
-
   return (
     <div className="relative select-none">
-      {/* Month labels */}
       <div className="flex mb-1 ml-8">
         {weeks.map((_, i) => {
           const label = monthLabels.find((m) => m.col === i);
-          return (
-            <div key={i} className="w-3 shrink-0 mr-0.5 text-xs text-gray-400 leading-none">
-              {label ? label.label : ""}
-            </div>
-          );
+          return <div key={i} className="w-3 shrink-0 mr-0.5 text-xs text-gray-400 leading-none">{label ? label.label : ""}</div>;
         })}
       </div>
-
       <div className="flex gap-0.5">
-        {/* Day labels */}
         <div className="flex flex-col gap-0.5 mr-1 w-7">
           {DAYS.map((d, i) => (
-            <div key={d} className="h-3 text-xs text-gray-400 leading-none flex items-center">
-              {i % 2 === 1 ? d : ""}
-            </div>
+            <div key={d} className="h-3 text-xs text-gray-400 leading-none flex items-center">{i % 2 === 1 ? d : ""}</div>
           ))}
         </div>
-
-        {/* Grid */}
         {weeks.map((week, wi) => (
           <div key={wi} className="flex flex-col gap-0.5">
             {week.map((day, di) => {
@@ -125,9 +122,7 @@ function Heatmap({ dayMap }: { dayMap: Record<string, DayData> }) {
                   key={di}
                   className={`h-3 w-3 rounded-sm cursor-default hover:opacity-70 transition-opacity ${cellColor(day, dayMap, today)}`}
                   onMouseEnter={(e) => {
-                    const text = data
-                      ? `${key} · ${data.count} session${data.count > 1 ? "s" : ""} · ${formatVolume(data.volume)}`
-                      : key;
+                    const text = data ? `${key} · ${data.count} session${data.count > 1 ? "s" : ""} · ${formatVolume(data.volume)}` : key;
                     setTooltip({ text, x: e.clientX, y: e.clientY });
                   }}
                   onMouseLeave={() => setTooltip(null)}
@@ -137,8 +132,6 @@ function Heatmap({ dayMap }: { dayMap: Record<string, DayData> }) {
           </div>
         ))}
       </div>
-
-      {/* Legend */}
       <div className="flex items-center gap-1.5 mt-2 justify-end">
         <span className="text-xs text-gray-400">Less</span>
         {["bg-gray-100","bg-green-300","bg-green-400","bg-green-500","bg-green-700"].map((c) => (
@@ -146,16 +139,152 @@ function Heatmap({ dayMap }: { dayMap: Record<string, DayData> }) {
         ))}
         <span className="text-xs text-gray-400">More</span>
       </div>
-
       {tooltip && (
-        <div
-          className="fixed z-50 bg-gray-900 text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap"
-          style={{ left: tooltip.x, top: tooltip.y - 32 }}
-        >
+        <div className="fixed z-50 bg-gray-900 text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap" style={{ left: tooltip.x, top: tooltip.y - 32 }}>
           {tooltip.text}
         </div>
       )}
     </div>
+  );
+}
+
+function ExerciseChart({ prs }: { prs: Stats["prs"] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [metric, setMetric] = useState<"maxWeight" | "totalVolume">("maxWeight");
+
+  useEffect(() => {
+    if (!selectedId) return;
+    setLoadingHistory(true);
+    fetch(`/api/workout/exercises/${selectedId}/history`)
+      .then((r) => r.json())
+      .then(setHistory)
+      .catch(console.error)
+      .finally(() => setLoadingHistory(false));
+  }, [selectedId]);
+
+  const selected = prs.find((p) => p.exerciseId === selectedId);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Exercise Progress</CardTitle>
+        <CardDescription>Weight or volume over time for any exercise</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2 flex-wrap">
+          <select
+            className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm flex-1 min-w-0"
+            value={selectedId ?? ""}
+            onChange={(e) => setSelectedId(e.target.value || null)}
+          >
+            <option value="">Select an exercise...</option>
+            {prs.map((pr) => (
+              <option key={pr.exerciseId} value={pr.exerciseId}>{pr.exerciseName}</option>
+            ))}
+          </select>
+          <div className="flex gap-1">
+            <Button size="sm" variant={metric === "maxWeight" ? "default" : "outline"} onClick={() => setMetric("maxWeight")}>Weight</Button>
+            <Button size="sm" variant={metric === "totalVolume" ? "default" : "outline"} onClick={() => setMetric("totalVolume")}>Volume</Button>
+          </div>
+        </div>
+
+        {!selectedId ? (
+          <div className="h-40 flex items-center justify-center text-sm text-gray-400">
+            Select an exercise above to see its history
+          </div>
+        ) : loadingHistory ? (
+          <Skeleton className="h-40 w-full" />
+        ) : history.length < 2 ? (
+          <div className="h-40 flex items-center justify-center text-sm text-gray-400">
+            Not enough data yet (need 2+ sessions)
+          </div>
+        ) : (
+          <div>
+            {selected && (
+              <p className="text-xs text-gray-500 mb-2">
+                All-time best: <strong>{selected.maxWeight} lb × {selected.maxReps} reps</strong>
+              </p>
+            )}
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={history} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: "#9ca3af" }}
+                  tickFormatter={(d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  interval="preserveStartEnd"
+                />
+                <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} />
+                <Tooltip
+                  contentStyle={{ fontSize: 12 }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(v: any) => [metric === "maxWeight" ? `${v} lb` : formatVolume(Number(v)), metric === "maxWeight" ? "Max Weight" : "Volume"]}
+                  labelFormatter={(l) => new Date(l).toLocaleDateString()}
+                />
+                <Line
+                  type="monotone"
+                  dataKey={metric}
+                  stroke="#6366f1"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#6366f1" }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MuscleGroupChart({ muscleGroupVolume }: { muscleGroupVolume: Record<string, number> }) {
+  const data = Object.entries(muscleGroupVolume)
+    .map(([group, volume]) => ({
+      group: group.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      volume: Math.round(volume),
+      key: group,
+    }))
+    .sort((a, b) => b.volume - a.volume);
+
+  if (data.length === 0) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-base">Volume by Muscle Group</CardTitle></CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-400 py-4 text-center">No data for this period.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Volume by Muscle Group</CardTitle>
+        <CardDescription>Total volume lifted per muscle group this period</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+            <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} tickFormatter={(v) => formatVolume(v)} />
+            <YAxis type="category" dataKey="group" tick={{ fontSize: 11, fill: "#374151" }} width={90} />
+            <Tooltip
+              contentStyle={{ fontSize: 12 }}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              formatter={(v: any) => [formatVolume(Number(v)), "Volume"]}
+            />
+            <Bar dataKey="volume" radius={[0, 4, 4, 0]}>
+              {data.map((entry) => (
+                <Cell key={entry.key} fill={MUSCLE_COLORS[entry.key] ?? "#6366f1"} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -219,9 +348,9 @@ export default function ProgressPage() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
+          Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}><CardContent className="pt-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
           ))
         ) : (
@@ -247,12 +376,38 @@ export default function ProgressPage() {
               </CardContent>
             </Card>
             <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                  <Flame className="h-3.5 w-3.5 text-orange-500" /> Current Streak
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.currentStreak ?? 0} <span className="text-sm font-normal text-gray-500">days</span></div>
+                <p className="text-xs text-gray-500 mt-1">Best: {stats?.longestStreak ?? 0} days</p>
+              </CardContent>
+            </Card>
+            <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">PRs Tracked</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.prs.length ?? 0}</div>
                 <p className="text-xs text-gray-500 mt-1">Exercises with history</p>
               </CardContent>
             </Card>
+          </>
+        )}
+      </div>
+
+      {/* Exercise Chart + Muscle Group Volume */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {loading ? (
+          <>
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </>
+        ) : (
+          <>
+            <ExerciseChart prs={stats?.prs ?? []} />
+            <MuscleGroupChart muscleGroupVolume={stats?.muscleGroupVolume ?? {}} />
           </>
         )}
       </div>

@@ -58,6 +58,7 @@ model Exercise {
   programExercises  ProgramExercise[]
   sessionExercises  SessionExercise[]
   templateExercises TemplateExercise[]
+  goals             Goal[]
 
   @@index([category])
   @@index([muscleGroup])
@@ -192,4 +193,20 @@ model TemplateExercise {
   restSeconds Int             @default(90)
 
   @@index([templateId])
+}
+
+model Goal {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  exerciseId  String?
+  exercise    Exercise? @relation(fields: [exerciseId], references: [id])
+  targetValue Decimal   @db.Decimal(8, 2)
+  unit        String    // "lb", "reps", "sessions", "volume_lb"
+  deadline    DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId])
 }
