@@ -10,6 +10,9 @@ const updateSchema = z.object({
   calories: z.number().int().min(0).optional(),
   avgHeartRate: z.number().int().min(0).optional(),
   maxHeartRate: z.number().int().min(0).optional(),
+  inclinePercent: z.number().min(0).max(30).optional(),
+  speedKmh: z.number().min(0).optional(),
+  treadmillMode: z.string().optional(),
 });
 
 async function updateSession(req: AuthedRequest, ctx: Params) {
