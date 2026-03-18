@@ -1,16 +1,66 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2 } from "lucide-react";
+import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
+function requestNotificationPermission() {
+  if (typeof Notification !== "undefined" && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function sendRestNotification(exerciseName: string) {
+  if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+    new Notification("Rest complete!", {
+      body: `Time to do your next set of ${exerciseName}`,
+      icon: "/favicon.ico",
+    });
+  }
+}
+
+function useTimer(onDone?: () => void) {
+  const [seconds, setSeconds] = useState(0);
+  const [running, setRunning] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
+
+  const start = useCallback((s: number) => {
+    setSeconds(s);
+    setRunning(true);
+  }, []);
+
+  const stop = useCallback(() => {
+    setRunning(false);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setSeconds(0);
+  }, []);
+
+  useEffect(() => {
+    if (!running) return;
+    intervalRef.current = setInterval(() => {
+      setSeconds((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [running]);
+
+  useEffect(() => {
+    if (running && seconds === 0) {
+      setRunning(false);
+      onDoneRef.current?.();
+    }
+  }, [running, seconds]);
+
+  return { seconds, running, start, stop };
+}
 
 interface WorkoutSet {
   id: string;
@@ -90,6 +140,10 @@ export default function LogWorkoutPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [allExercises, setAllExercises] = useState<{ id: string; name: string; muscleGroup: string }[]>([]);
   const [exSearch, setExSearch] = useState("");
+  const [timerExName, setTimerExName] = useState("");
+  const timer = useTimer(useCallback(() => sendRestNotification(timerExName), [timerExName]));
+  const [timerLabel, setTimerLabel] = useState("");
+  const [timerEnabled, setTimerEnabled] = useState(true);
   const [savingTemplate, setSavingTemplate] = useState(false);
   const sessionRef = useRef<Session | null>(null);
 
@@ -101,6 +155,7 @@ export default function LogWorkoutPage() {
   const [overloadHints, setOverloadHints] = useState<Record<string, OverloadSuggestion | null>>({});
 
   useEffect(() => { sessionRef.current = session; }, [session]);
+  useEffect(() => { requestNotificationPermission(); }, []);
 
   // Persist active session ID + unsaved inputs so navigating away and back resumes the session
   useEffect(() => {
@@ -239,6 +294,12 @@ export default function LogWorkoutPage() {
           ),
         };
       });
+      if (timerEnabled) {
+        const restSec = ex.restSeconds ?? 90;
+        timer.start(restSec);
+        setTimerExName(ex.exercise.name);
+        setTimerLabel(`Rest: ${ex.exercise.name}`);
+      }
     }
   }
 
@@ -396,12 +457,38 @@ export default function LogWorkoutPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{completedSets}/{totalSets} sets completed</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTimerEnabled((v) => !v)}
+            className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-colors ${timerEnabled ? "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300" : "border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500"}`}
+            title={timerEnabled ? "Disable rest timer" : "Enable rest timer"}
+          >
+            <Timer className="h-3.5 w-3.5" />
+            {timerEnabled ? "Timer on" : "Timer off"}
+          </button>
           <Button onClick={finishSession} disabled={completing} className="gap-2">
             <CheckCircle2 className="h-4 w-4" />
             {completing ? "Saving..." : "Finish"}
           </Button>
         </div>
       </div>
+
+      {/* Rest Timer */}
+      {timer.running && (
+        <Card className="bg-gray-900 text-white">
+          <CardContent className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-3">
+              <Timer className="h-5 w-5" />
+              <div>
+                <p className="text-sm font-medium">{timerLabel}</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {Math.floor(timer.seconds / 60)}:{String(timer.seconds % 60).padStart(2, "0")}
+                </p>
+              </div>
+            </div>
+            <Button variant="ghost" className="text-white hover:text-gray-300" onClick={timer.stop}>Skip</Button>
+          </CardContent>
+        </Card>
+      )}
 
       {session.exercises.length === 0 && (
         <Card className="border-dashed">
