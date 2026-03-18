@@ -1,30 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, Clock } from "lucide-react";
+import { Check, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-function requestNotificationPermission() {
-  if (typeof Notification !== "undefined" && Notification.permission === "default") {
-    Notification.requestPermission();
-  }
-}
-
-function sendRestNotification(exerciseName: string) {
-  if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-    new Notification("Rest complete!", {
-      body: `Time to do your next set of ${exerciseName}`,
-      icon: "/favicon.ico",
-    });
-  }
-}
 
 interface WorkoutSet {
   id: string;
@@ -59,78 +45,6 @@ interface OverloadSuggestion {
   note: string;
 }
 
-function useTimer(onDone?: () => void) {
-  const [seconds, setSeconds] = useState(0);
-  const [running, setRunning] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const onDoneRef = useRef(onDone);
-  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
-
-  const start = useCallback((s: number) => {
-    setSeconds(s);
-    setRunning(true);
-  }, []);
-
-  const stop = useCallback(() => {
-    setRunning(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setSeconds(0);
-  }, []);
-
-  useEffect(() => {
-    if (!running) return;
-    intervalRef.current = setInterval(() => {
-      setSeconds((s) => (s <= 1 ? 0 : s - 1));
-    }, 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [running]);
-
-  // Detect when countdown reaches 0 while running, then stop and fire callback
-  useEffect(() => {
-    if (running && seconds === 0) {
-      setRunning(false);
-      onDoneRef.current?.();
-    }
-  }, [running, seconds]);
-
-  return { seconds, running, start, stop };
-}
-
-function useSessionElapsed(startedAt: string | undefined, offsetSeconds: number) {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    if (!startedAt) return;
-    const update = () => {
-      const base = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
-      setElapsed(base + offsetSeconds);
-    };
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, [startedAt, offsetSeconds]);
-
-  return elapsed;
-}
-
-function formatElapsed(seconds: number) {
-  const s = Math.max(0, seconds);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  return `${m}:${String(sec).padStart(2, "0")}`;
-}
-
-function parseElapsedInput(value: string): number | null {
-  // Accept formats: "MM:SS", "H:MM:SS", or plain seconds
-  const parts = value.trim().split(":").map((p) => parseInt(p, 10));
-  if (parts.some(isNaN)) return null;
-  if (parts.length === 1) return parts[0];
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  return null;
-}
 
 function muscleLabel(m: string) {
   return m.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -176,10 +90,6 @@ export default function LogWorkoutPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [allExercises, setAllExercises] = useState<{ id: string; name: string; muscleGroup: string }[]>([]);
   const [exSearch, setExSearch] = useState("");
-  const [timerExName, setTimerExName] = useState("");
-  const timer = useTimer(useCallback(() => sendRestNotification(timerExName), [timerExName]));
-  const [timerLabel, setTimerLabel] = useState("");
-  const [timerEnabled, setTimerEnabled] = useState(true);
   const [savingTemplate, setSavingTemplate] = useState(false);
   const sessionRef = useRef<Session | null>(null);
 
@@ -190,14 +100,7 @@ export default function LogWorkoutPage() {
   // Overload hints
   const [overloadHints, setOverloadHints] = useState<Record<string, OverloadSuggestion | null>>({});
 
-  // Session elapsed timer
-  const [timerOffset, setTimerOffset] = useState(0); // seconds added/subtracted from computed elapsed
-  const [editingTimer, setEditingTimer] = useState(false);
-  const [timerDraft, setTimerDraft] = useState("");
-  const elapsed = useSessionElapsed(session?.startedAt, timerOffset);
-
   useEffect(() => { sessionRef.current = session; }, [session]);
-  useEffect(() => { requestNotificationPermission(); }, []);
 
   // Persist active session ID + unsaved inputs so navigating away and back resumes the session
   useEffect(() => {
@@ -336,12 +239,6 @@ export default function LogWorkoutPage() {
           ),
         };
       });
-      if (timerEnabled) {
-        const restSec = ex.restSeconds ?? 90;
-        timer.start(restSec);
-        setTimerExName(ex.exercise.name);
-        setTimerLabel(`Rest: ${ex.exercise.name}`);
-      }
     }
   }
 
@@ -440,7 +337,7 @@ export default function LogWorkoutPage() {
   async function finishSession() {
     if (!session) return;
     setCompleting(true);
-    const durationSeconds = elapsed;
+    const durationSeconds = Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000);
     const res = await fetch(`/api/workout/sessions/${session.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -497,77 +394,14 @@ export default function LogWorkoutPage() {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{session.name ?? "Workout"}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{completedSets}/{totalSets} sets completed</p>
-
-          {/* Session elapsed timer */}
-          <div className="flex items-center gap-2 mt-2">
-            <Clock className="h-4 w-4 text-gray-400 shrink-0" />
-            {editingTimer ? (
-              <form
-                className="flex items-center gap-1.5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const parsed = parseElapsedInput(timerDraft);
-                  if (parsed !== null) {
-                    const base = Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000);
-                    setTimerOffset(parsed - base);
-                  }
-                  setEditingTimer(false);
-                }}
-              >
-                <input
-                  autoFocus
-                  value={timerDraft}
-                  onChange={(e) => setTimerDraft(e.target.value)}
-                  placeholder="e.g. 1:15:00"
-                  className="w-24 h-7 text-sm border border-gray-300 dark:border-gray-600 rounded px-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white tabular-nums"
-                />
-                <button type="submit" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Save</button>
-                <button type="button" onClick={() => setEditingTimer(false)} className="text-xs text-gray-400 hover:underline">Cancel</button>
-              </form>
-            ) : (
-              <button
-                onClick={() => { setTimerDraft(formatElapsed(elapsed)); setEditingTimer(true); }}
-                className="text-lg font-semibold tabular-nums text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                title="Edit session time"
-              >
-                {formatElapsed(elapsed)}
-              </button>
-            )}
-          </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setTimerEnabled((v) => !v)}
-            className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-colors ${timerEnabled ? "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300" : "border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500"}`}
-            title={timerEnabled ? "Disable rest timer" : "Enable rest timer"}
-          >
-            <Timer className="h-3.5 w-3.5" />
-            {timerEnabled ? "Timer on" : "Timer off"}
-          </button>
           <Button onClick={finishSession} disabled={completing} className="gap-2">
             <CheckCircle2 className="h-4 w-4" />
             {completing ? "Saving..." : "Finish"}
           </Button>
         </div>
       </div>
-
-      {/* Rest Timer */}
-      {timer.running && (
-        <Card className="bg-gray-900 text-white">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <Timer className="h-5 w-5" />
-              <div>
-                <p className="text-sm font-medium">{timerLabel}</p>
-                <p className="text-2xl font-bold tabular-nums">
-                  {Math.floor(timer.seconds / 60)}:{String(timer.seconds % 60).padStart(2, "0")}
-                </p>
-              </div>
-            </div>
-            <Button variant="ghost" className="text-white hover:text-gray-300" onClick={timer.stop}>Skip</Button>
-          </CardContent>
-        </Card>
-      )}
 
       {session.exercises.length === 0 && (
         <Card className="border-dashed">
