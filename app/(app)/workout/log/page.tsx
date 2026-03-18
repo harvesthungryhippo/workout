@@ -100,6 +100,31 @@ function muscleLabel(m: string) {
   return m.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+const SESSION_STORAGE_KEY = "activeWorkoutSession";
+
+type SavedInputs = Record<string, { reps: string; weight: string; rpe: string }>;
+
+function saveSessionState(sessionId: string, inputs: SavedInputs) {
+  try {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, setInputs: inputs }));
+  } catch { /* storage unavailable */ }
+}
+
+function loadSessionState(): { sessionId: string; setInputs: SavedInputs } | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearSessionState() {
+  try {
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch { /* storage unavailable */ }
+}
+
 export default function LogWorkoutPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -132,23 +157,69 @@ export default function LogWorkoutPage() {
   useEffect(() => { sessionRef.current = session; }, [session]);
   useEffect(() => { requestNotificationPermission(); }, []);
 
+  // Persist active session ID + unsaved inputs so navigating away and back resumes the session
   useEffect(() => {
-    fetch("/api/workout/sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: sessionName, programId, programDayId, templateId }),
-    })
-      .then((r) => r.json())
-      .then((s) => {
-        if (s && Array.isArray(s.exercises)) {
-          setSession(s);
-          initInputs(s);
-        } else {
-          console.error("session create failed:", s);
+    if (session?.id) {
+      saveSessionState(session.id, setInputs);
+    }
+  }, [session?.id, setInputs]);
+
+  useEffect(() => {
+    const isNewSession = programDayId || programId || templateId || sessionName;
+
+    async function createNewSession() {
+      const res = await fetch("/api/workout/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: sessionName, programId, programDayId, templateId }),
+      });
+      const s = await res.json();
+      if (s && Array.isArray(s.exercises)) {
+        setSession(s);
+        initInputs(s);
+        saveSessionState(s.id, {});
+      } else {
+        console.error("session create failed:", s);
+      }
+    }
+
+    async function init() {
+      if (!isNewSession) {
+        const saved = loadSessionState();
+        if (saved) {
+          try {
+            const res = await fetch(`/api/workout/sessions/${saved.sessionId}`);
+            if (res.ok) {
+              const s = await res.json();
+              if (s && Array.isArray(s.exercises) && !s.completedAt) {
+                setSession(s);
+                // Rebuild inputs: use saved draft values where available, fall back to DB values
+                const merged: SavedInputs = {};
+                for (const ex of s.exercises) {
+                  for (const set of ex.sets) {
+                    const key = `${ex.id}-${set.setNumber}`;
+                    merged[key] = saved.setInputs[key] ?? {
+                      reps: set.reps?.toString() ?? "",
+                      weight: set.weightKg?.toString() ?? "",
+                      rpe: set.rpe?.toString() ?? "",
+                    };
+                  }
+                }
+                setSetInputs(merged);
+                toast.info("Resumed your active session.");
+                return;
+              }
+            }
+          } catch { /* fall through to create new */ }
+          clearSessionState();
         }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      } else {
+        clearSessionState();
+      }
+      await createNewSession();
+    }
+
+    init().catch(console.error).finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -333,7 +404,7 @@ export default function LogWorkoutPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ completedAt: new Date().toISOString(), durationSeconds }),
     });
-    if (res.ok) { toast.success("Session complete!"); router.push("/workout"); }
+    if (res.ok) { clearSessionState(); toast.success("Session complete!"); router.push("/workout"); }
     setCompleting(false);
   }
 
