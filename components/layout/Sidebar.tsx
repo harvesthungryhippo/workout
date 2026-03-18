@@ -7,21 +7,22 @@ import { cn } from "@/lib/utils";
 import {
   Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark,
   Calculator, Target, Utensils, Droplets, Moon, Activity, Bell, TrendingUp,
-  Download, Settings, ChevronDown, ChevronRight, Zap,
+  Download, Settings, ChevronDown, ChevronRight, Zap, Swords,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeProvider";
 
 const NAV_PRIMARY = [
-  { href: "/workout",           label: "Dashboard",  icon: Dumbbell },
-  { href: "/workout/log",       label: "Log Session", icon: Play },
-  { href: "/workout/programs",  label: "Programs",   icon: Dumbbell },
-  { href: "/workout/calendar",  label: "Calendar",   icon: Calendar },
-  { href: "/workout/templates", label: "Templates",  icon: Bookmark },
-  { href: "/workout/exercises", label: "Exercises",  icon: BookOpen },
-  { href: "/workout/progress",  label: "Progress",   icon: BarChart2 },
-  { href: "/workout/overload",  label: "Overload",   icon: TrendingUp },
-  { href: "/workout/goals",     label: "Goals",      icon: Target },
-  { href: "/workout/cardio",    label: "Cardio",     icon: Zap },
+  { href: "/workout",            label: "Dashboard",  icon: Dumbbell },
+  { href: "/workout/log",        label: "Log Session", icon: Play },
+  { href: "/workout/programs",   label: "Programs",   icon: Dumbbell },
+  { href: "/workout/legendary",  label: "Legendary",  icon: Swords },
+  { href: "/workout/calendar",   label: "Calendar",   icon: Calendar },
+  { href: "/workout/templates",  label: "Templates",  icon: Bookmark },
+  { href: "/workout/exercises",  label: "Exercises",  icon: BookOpen },
+  { href: "/workout/progress",   label: "Progress",   icon: BarChart2 },
+  { href: "/workout/overload",   label: "Overload",   icon: TrendingUp },
+  { href: "/workout/goals",      label: "Goals",      icon: Target },
+  { href: "/workout/cardio",     label: "Cardio",     icon: Zap },
 ];
 
 const NAV_HEALTH = [
