@@ -225,8 +225,27 @@ export default function LogWorkoutPage() {
       }
     }
 
+    async function resumeSession(s: Session, savedInputs?: SavedInputs) {
+      setSession(s);
+      const merged: SavedInputs = {};
+      for (const ex of s.exercises) {
+        for (const set of ex.sets) {
+          const key = `${ex.id}-${set.setNumber}`;
+          merged[key] = savedInputs?.[key] ?? {
+            reps: set.reps?.toString() ?? "",
+            weight: set.weightKg?.toString() ?? "",
+            rpe: set.rpe?.toString() ?? "",
+          };
+        }
+      }
+      setSetInputs(merged);
+      saveSessionState(s.id, merged);
+      toast.info("Resumed your active session.");
+    }
+
     async function init() {
       if (!isNewSession) {
+        // 1. Try sessionStorage first
         const saved = loadSessionState();
         if (saved) {
           try {
@@ -234,27 +253,28 @@ export default function LogWorkoutPage() {
             if (res.ok) {
               const s = await res.json();
               if (s && Array.isArray(s.exercises) && !s.completedAt) {
-                setSession(s);
-                // Rebuild inputs: use saved draft values where available, fall back to DB values
-                const merged: SavedInputs = {};
-                for (const ex of s.exercises) {
-                  for (const set of ex.sets) {
-                    const key = `${ex.id}-${set.setNumber}`;
-                    merged[key] = saved.setInputs[key] ?? {
-                      reps: set.reps?.toString() ?? "",
-                      weight: set.weightKg?.toString() ?? "",
-                      rpe: set.rpe?.toString() ?? "",
-                    };
-                  }
-                }
-                setSetInputs(merged);
-                toast.info("Resumed your active session.");
+                await resumeSession(s, saved.setInputs);
                 return;
               }
             }
-          } catch { /* fall through to create new */ }
+          } catch { /* fall through */ }
           clearSessionState();
         }
+
+        // 2. No sessionStorage — check API for the most recent incomplete session
+        try {
+          const res = await fetch("/api/workout/sessions?limit=5");
+          if (res.ok) {
+            const data = await res.json();
+            const incomplete = (data.sessions ?? []).find(
+              (s: Session) => !s.completedAt
+            );
+            if (incomplete) {
+              await resumeSession(incomplete);
+              return;
+            }
+          }
+        } catch { /* fall through to create new */ }
       } else {
         clearSessionState();
       }
