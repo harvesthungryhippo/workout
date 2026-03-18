@@ -78,16 +78,20 @@ function useTimer(onDone?: () => void) {
   }, []);
 
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => {
-        setSeconds((s) => {
-          if (s <= 1) { setRunning(false); onDoneRef.current?.(); return 0; }
-          return s - 1;
-        });
-      }, 1000);
-    }
+    if (!running) return;
+    intervalRef.current = setInterval(() => {
+      setSeconds((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [running]);
+
+  // Detect when countdown reaches 0 while running, then stop and fire callback
+  useEffect(() => {
+    if (running && seconds === 0) {
+      setRunning(false);
+      onDoneRef.current?.();
+    }
+  }, [running, seconds]);
 
   return { seconds, running, start, stop };
 }
@@ -114,6 +118,7 @@ export default function LogWorkoutPage() {
   const [timerExName, setTimerExName] = useState("");
   const timer = useTimer(useCallback(() => sendRestNotification(timerExName), [timerExName]));
   const [timerLabel, setTimerLabel] = useState("");
+  const [timerEnabled, setTimerEnabled] = useState(true);
   const [savingTemplate, setSavingTemplate] = useState(false);
   const sessionRef = useRef<Session | null>(null);
 
@@ -218,10 +223,12 @@ export default function LogWorkoutPage() {
           ),
         };
       });
-      const restSec = ex.restSeconds ?? 90;
-      timer.start(restSec);
-      setTimerExName(ex.exercise.name);
-      setTimerLabel(`Rest: ${ex.exercise.name}`);
+      if (timerEnabled) {
+        const restSec = ex.restSeconds ?? 90;
+        timer.start(restSec);
+        setTimerExName(ex.exercise.name);
+        setTimerLabel(`Rest: ${ex.exercise.name}`);
+      }
     }
   }
 
@@ -378,10 +385,20 @@ export default function LogWorkoutPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{session.name ?? "Workout"}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{completedSets}/{totalSets} sets completed</p>
         </div>
-        <Button onClick={finishSession} disabled={completing} className="gap-2">
-          <CheckCircle2 className="h-4 w-4" />
-          {completing ? "Saving..." : "Finish"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTimerEnabled((v) => !v)}
+            className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-colors ${timerEnabled ? "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300" : "border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500"}`}
+            title={timerEnabled ? "Disable rest timer" : "Enable rest timer"}
+          >
+            <Timer className="h-3.5 w-3.5" />
+            {timerEnabled ? "Timer on" : "Timer off"}
+          </button>
+          <Button onClick={finishSession} disabled={completing} className="gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            {completing ? "Saving..." : "Finish"}
+          </Button>
+        </div>
       </div>
 
       {/* Rest Timer */}
