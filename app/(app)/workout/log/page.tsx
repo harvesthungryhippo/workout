@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2 } from "lucide-react";
+import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, Clock } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -96,6 +96,42 @@ function useTimer(onDone?: () => void) {
   return { seconds, running, start, stop };
 }
 
+function useSessionElapsed(startedAt: string | undefined, offsetSeconds: number) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!startedAt) return;
+    const update = () => {
+      const base = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+      setElapsed(base + offsetSeconds);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [startedAt, offsetSeconds]);
+
+  return elapsed;
+}
+
+function formatElapsed(seconds: number) {
+  const s = Math.max(0, seconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+function parseElapsedInput(value: string): number | null {
+  // Accept formats: "MM:SS", "H:MM:SS", or plain seconds
+  const parts = value.trim().split(":").map((p) => parseInt(p, 10));
+  if (parts.some(isNaN)) return null;
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
+
 function muscleLabel(m: string) {
   return m.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -153,6 +189,12 @@ export default function LogWorkoutPage() {
 
   // Overload hints
   const [overloadHints, setOverloadHints] = useState<Record<string, OverloadSuggestion | null>>({});
+
+  // Session elapsed timer
+  const [timerOffset, setTimerOffset] = useState(0); // seconds added/subtracted from computed elapsed
+  const [editingTimer, setEditingTimer] = useState(false);
+  const [timerDraft, setTimerDraft] = useState("");
+  const elapsed = useSessionElapsed(session?.startedAt, timerOffset);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
   useEffect(() => { requestNotificationPermission(); }, []);
@@ -398,7 +440,7 @@ export default function LogWorkoutPage() {
   async function finishSession() {
     if (!session) return;
     setCompleting(true);
-    const durationSeconds = Math.round((Date.now() - new Date(session.startedAt).getTime()) / 1000);
+    const durationSeconds = elapsed;
     const res = await fetch(`/api/workout/sessions/${session.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -455,6 +497,43 @@ export default function LogWorkoutPage() {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{session.name ?? "Workout"}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{completedSets}/{totalSets} sets completed</p>
+
+          {/* Session elapsed timer */}
+          <div className="flex items-center gap-2 mt-2">
+            <Clock className="h-4 w-4 text-gray-400 shrink-0" />
+            {editingTimer ? (
+              <form
+                className="flex items-center gap-1.5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const parsed = parseElapsedInput(timerDraft);
+                  if (parsed !== null) {
+                    const base = Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000);
+                    setTimerOffset(parsed - base);
+                  }
+                  setEditingTimer(false);
+                }}
+              >
+                <input
+                  autoFocus
+                  value={timerDraft}
+                  onChange={(e) => setTimerDraft(e.target.value)}
+                  placeholder="e.g. 1:15:00"
+                  className="w-24 h-7 text-sm border border-gray-300 dark:border-gray-600 rounded px-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white tabular-nums"
+                />
+                <button type="submit" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Save</button>
+                <button type="button" onClick={() => setEditingTimer(false)} className="text-xs text-gray-400 hover:underline">Cancel</button>
+              </form>
+            ) : (
+              <button
+                onClick={() => { setTimerDraft(formatElapsed(elapsed)); setEditingTimer(true); }}
+                className="text-lg font-semibold tabular-nums text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                title="Edit session time"
+              >
+                {formatElapsed(elapsed)}
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
