@@ -19,24 +19,28 @@ async function getHistory(req: AuthedRequest, ctx: Params) {
     orderBy: { session: { startedAt: "asc" } },
   });
 
+  const KG_TO_LB = 2.20462;
+
   type SessionExerciseWithSets = (typeof sessionExercises)[number];
   const history = sessionExercises.map((se: SessionExerciseWithSets) => {
-    let maxWeight = 0;
+    let maxWeightKg = 0;
     let maxReps = 0;
-    let totalVolume = 0;
+    let totalVolumeKg = 0;
     for (const set of se.sets) {
       if (!set.completed) continue;
       const w = Number(set.weightKg ?? 0);
       const r = set.reps ?? 0;
-      if (w > maxWeight) maxWeight = w;
-      if (r > maxReps) maxReps = r;
-      totalVolume += w * r;
+      if (w > maxWeightKg) {
+        maxWeightKg = w;
+        maxReps = r;
+      }
+      totalVolumeKg += w * r;
     }
     return {
       date: se.session.startedAt.toISOString().slice(0, 10),
-      maxWeight,
+      maxWeight: Math.round(maxWeightKg * KG_TO_LB * 10) / 10,
       maxReps,
-      totalVolume: Math.round(totalVolume),
+      totalVolume: Math.round(totalVolumeKg * KG_TO_LB),
     };
   });
 
