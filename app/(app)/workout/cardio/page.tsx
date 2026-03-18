@@ -98,6 +98,11 @@ function estimateCalories(type: CardioType, durationSec: number, distanceM: numb
   return Math.round(met * weightKg * (durationSec / 3600));
 }
 
+/** Return a datetime-local string (YYYY-MM-DDTHH:MM) in local time */
+function toLocalDateTimeString(d: Date): string {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 /** Convert "HH:MM" or "MM:SS" or plain minutes string to total seconds */
 function parseDurationInput(val: string): number {
   const parts = val.split(":").map(Number);
@@ -151,7 +156,7 @@ export default function CardioPage() {
   const [manualMaxHR, setManualMaxHR] = useState("");
   const [manualIncline, setManualIncline] = useState("");
   const [manualSpeed, setManualSpeed] = useState("");
-  const [manualDate, setManualDate] = useState(() => new Date().toISOString().slice(0, 16));
+  const [manualDate, setManualDate] = useState(() => toLocalDateTimeString(new Date()));
 
   // ── Common save state ──────────────────────────────────────────────────────
   const [notes, setNotes] = useState("");
@@ -290,6 +295,7 @@ export default function CardioPage() {
       treadmillMode: equipment === "treadmill" ? treadmillPreset : undefined,
       inclinePercent: equipment === "treadmill" && !isNaN(inclineVal) ? inclineVal : undefined,
       speedKmh: equipment === "treadmill" && !isNaN(speedVal) ? speedVal : undefined,
+      startedAt: new Date(startTimeRef.current).toISOString(),
       completedAt: new Date().toISOString(),
       durationSeconds: elapsed,
       distanceMeters: distance > 0 ? distance : undefined,
@@ -301,24 +307,29 @@ export default function CardioPage() {
       route: waypoints.length > 0 ? waypoints : undefined,
     };
 
-    const res = await fetch("/api/workout/cardio", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("/api/workout/cardio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (res.ok) {
-      const saved = await res.json();
-      setHistory((prev) => [saved, ...prev]);
-      toast.success("Session saved!");
-      setShowSave(false);
-      setNotes("");
-      setElapsed(0);
-      setDistance(0);
-    } else {
-      toast.error("Failed to save session.");
+      if (res.ok) {
+        const saved = await res.json();
+        setHistory((prev) => [saved, ...prev]);
+        toast.success("Session saved!");
+        setShowSave(false);
+        setNotes("");
+        setElapsed(0);
+        setDistance(0);
+      } else {
+        toast.error("Failed to save session.");
+      }
+    } catch {
+      toast.error("Failed to save session. Please check your connection.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   function discardSession() {
@@ -368,30 +379,35 @@ export default function CardioPage() {
       notes: notes || undefined,
     };
 
-    const res = await fetch("/api/workout/cardio", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("/api/workout/cardio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (res.ok) {
-      const saved = await res.json();
-      setHistory((prev) => [saved, ...prev].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()));
-      toast.success("Session logged!");
-      // Reset manual form
-      setManualDuration("");
-      setManualDistanceKm("");
-      setManualCalories("");
-      setManualAvgHR("");
-      setManualMaxHR("");
-      setManualIncline("");
-      setManualSpeed("");
-      setNotes("");
-      setManualDate(new Date().toISOString().slice(0, 16));
-    } else {
-      toast.error("Failed to log session.");
+      if (res.ok) {
+        const saved = await res.json();
+        setHistory((prev) => [saved, ...prev].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()));
+        toast.success("Session logged!");
+        // Reset manual form
+        setManualDuration("");
+        setManualDistanceKm("");
+        setManualCalories("");
+        setManualAvgHR("");
+        setManualMaxHR("");
+        setManualIncline("");
+        setManualSpeed("");
+        setNotes("");
+        setManualDate(toLocalDateTimeString(new Date()));
+      } else {
+        toast.error("Failed to log session.");
+      }
+    } catch {
+      toast.error("Failed to log session. Please check your connection.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   async function deleteSession(id: string) {
