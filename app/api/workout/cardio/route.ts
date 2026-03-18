@@ -25,6 +25,10 @@ async function getSessions(req: AuthedRequest) {
 // POST /api/workout/cardio — save a completed cardio session
 const createSchema = z.object({
   type: z.enum(["running", "walking"]),
+  equipment: z.enum(["outdoor", "treadmill"]).optional(),
+  treadmillMode: z.string().optional(),
+  inclinePercent: z.number().min(0).max(30).optional(),
+  speedKmh: z.number().min(0).optional(),
   startedAt: z.string().optional(),
   completedAt: z.string().optional(),
   durationSeconds: z.number().int().min(0).optional(),
@@ -50,6 +54,10 @@ async function createSession(req: AuthedRequest) {
       data: {
         userId: req.session.userId,
         type: body.type,
+        equipment: body.equipment,
+        treadmillMode: body.treadmillMode,
+        inclinePercent: body.inclinePercent,
+        speedKmh: body.speedKmh,
         startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
         completedAt: body.completedAt ? new Date(body.completedAt) : undefined,
         durationSeconds: body.durationSeconds,

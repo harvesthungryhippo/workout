@@ -278,6 +278,10 @@ model CardioSession {
   id              String    @id @default(cuid())
   userId          String
   type            String    // "running" | "walking"
+  equipment       String?   // "outdoor" | "treadmill"
+  treadmillMode   String?   // "manual" | "fat_burn" | "interval" | "hill" | "cardio" | "speed" | "custom"
+  inclinePercent  Float?    // average treadmill incline %
+  speedKmh        Float?    // average speed in km/h
   startedAt       DateTime  @default(now())
   completedAt     DateTime?
   durationSeconds Int?
