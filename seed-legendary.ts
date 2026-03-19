@@ -68,6 +68,9 @@ const martialArtsExercises = [
   { name: "Round Kick Drill", category: "BODYWEIGHT", muscleGroup: "QUADS", equipment: "BODYWEIGHT", instructions: "Muay Thai / Taekwondo style round kick repetitions. Builds hip rotation power and leg conditioning." },
   { name: "Kettlebell Swing", category: "STRENGTH", muscleGroup: "FULL_BODY", equipment: "KETTLEBELL", instructions: "Hip hinge and explosive hip extension to swing a kettlebell to shoulder height. Builds posterior chain power and cardio — popular in modern MMA conditioning." },
   { name: "Battle Ropes", category: "CARDIO", muscleGroup: "FULL_BODY", equipment: "NONE", instructions: "Wave patterns and slams with heavy ropes. Builds shoulder endurance, grip, and cardiovascular capacity." },
+  { name: "Swimming", category: "CARDIO", muscleGroup: "FULL_BODY", equipment: "NONE", instructions: "Swimming laps for low-impact full-body cardio. Rickson Gracie used ocean swimming for conditioning and mental fortitude." },
+  { name: "Running", category: "CARDIO", muscleGroup: "FULL_BODY", equipment: "NONE", instructions: "Steady-state or interval running. Foundation of cardio conditioning for fighters." },
+  { name: "Cycling", category: "CARDIO", muscleGroup: "QUADS", equipment: "NONE", instructions: "Stationary or outdoor cycling for active recovery and cardiovascular conditioning." },
 ] as const;
 
 // ---------------------------------------------------------------------------
