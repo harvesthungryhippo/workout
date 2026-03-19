@@ -67,6 +67,7 @@ interface WorkoutSet {
   setNumber: number;
   reps: number | null;
   weightKg: string | null;
+  durationSeconds: number | null;
   completed: boolean;
   rpe: number | null;
 }
@@ -76,9 +77,13 @@ interface SessionExercise {
   order: number;
   notes: string | null;
   supersetGroup: number | null;
-  exercise: { id: string; name: string; muscleGroup: string };
+  exercise: { id: string; name: string; muscleGroup: string; category: string };
   sets: WorkoutSet[];
   restSeconds?: number;
+}
+
+function isCardio(ex: SessionExercise) {
+  return ex.exercise.category === "CARDIO";
 }
 
 interface Session {
@@ -136,9 +141,9 @@ export default function LogWorkoutPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
-  const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string; rpe: string }>>({});
+  const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string; rpe: string; duration: string }>>({});
   const [showPicker, setShowPicker] = useState(false);
-  const [allExercises, setAllExercises] = useState<{ id: string; name: string; muscleGroup: string }[]>([]);
+  const [allExercises, setAllExercises] = useState<{ id: string; name: string; muscleGroup: string; category: string }[]>([]);
   const [exSearch, setExSearch] = useState("");
   const [timerExName, setTimerExName] = useState("");
   const timer = useTimer(useCallback(() => sendRestNotification(timerExName), [timerExName]));
@@ -224,13 +229,14 @@ export default function LogWorkoutPage() {
   }, []);
 
   function initInputs(s: Session) {
-    const inputs: Record<string, { reps: string; weight: string; rpe: string }> = {};
+    const inputs: Record<string, { reps: string; weight: string; rpe: string; duration: string }> = {};
     for (const ex of s.exercises) {
       for (const set of ex.sets) {
         inputs[`${ex.id}-${set.setNumber}`] = {
           reps: set.reps?.toString() ?? "",
           weight: set.weightKg?.toString() ?? "",
           rpe: set.rpe?.toString() ?? "",
+          duration: set.durationSeconds ? String(Math.round(set.durationSeconds / 60)) : "",
         };
       }
     }
@@ -262,7 +268,8 @@ export default function LogWorkoutPage() {
   async function completeSet(ex: SessionExercise, set: WorkoutSet) {
     if (!session) return;
     const key = setKey(ex.id, set.setNumber);
-    const input = setInputs[key] ?? { reps: "", weight: "", rpe: "" };
+    const input = setInputs[key] ?? { reps: "", weight: "", rpe: "", duration: "" };
+    const cardio = isCardio(ex);
 
     const res = await fetch(
       `/api/workout/sessions/${session.id}/exercises/${ex.id}/sets`,
@@ -271,9 +278,13 @@ export default function LogWorkoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           setNumber: set.setNumber,
-          reps: parseInt(input.reps) || undefined,
-          weightKg: parseFloat(input.weight) || undefined,
-          rpe: parseInt(input.rpe) || undefined,
+          ...(cardio
+            ? { durationSeconds: (parseFloat(input.duration) || 0) * 60 || undefined }
+            : {
+                reps: parseInt(input.reps) || undefined,
+                weightKg: parseFloat(input.weight) || undefined,
+                rpe: parseInt(input.rpe) || undefined,
+              }),
           completed: true,
         }),
       }
@@ -294,7 +305,7 @@ export default function LogWorkoutPage() {
           ),
         };
       });
-      if (timerEnabled) {
+      if (!cardio && timerEnabled) {
         const restSec = ex.restSeconds ?? 90;
         timer.start(restSec);
         setTimerExName(ex.exercise.name);
@@ -355,7 +366,7 @@ export default function LogWorkoutPage() {
     setShowPicker(true);
   }
 
-  async function addExerciseToSession(ex: { id: string; name: string; muscleGroup: string }) {
+  async function addExerciseToSession(ex: { id: string; name: string; muscleGroup: string; category: string }) {
     if (!session) return;
     setShowPicker(false);
     const order = session.exercises.length + 1;
@@ -369,7 +380,7 @@ export default function LogWorkoutPage() {
       setSession((prev) => prev ? { ...prev, exercises: [...prev.exercises, newEx] } : prev);
       const inputs: Record<string, { reps: string; weight: string; rpe: string }> = {};
       for (const set of newEx.sets) {
-        inputs[`${newEx.id}-${set.setNumber}`] = { reps: "", weight: "", rpe: "" };
+        inputs[`${newEx.id}-${set.setNumber}`] = { reps: "", weight: "", rpe: "", duration: "" };
       }
       setSetInputs((prev) => ({ ...prev, ...inputs }));
       toast.success(`${ex.name} added.`);
@@ -391,7 +402,7 @@ export default function LogWorkoutPage() {
         ...prev,
         exercises: prev.exercises.map((e) => e.id !== ex.id ? e : { ...e, sets: [...e.sets, newSet] }),
       } : prev);
-      setSetInputs((prev) => ({ ...prev, [`${ex.id}-${nextSetNumber}`]: { reps: "", weight: "", rpe: "" } }));
+      setSetInputs((prev) => ({ ...prev, [`${ex.id}-${nextSetNumber}`]: { reps: "", weight: "", rpe: "", duration: "" } }));
     }
   }
 
@@ -568,42 +579,62 @@ export default function LogWorkoutPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-5 gap-2 text-xs text-gray-400 dark:text-gray-500 mb-1 px-1">
-                <span>Set</span><span>Reps</span><span>Weight (lb)</span><span>RPE</span><span></span>
-              </div>
+              {isCardio(ex) ? (
+                <div className="grid grid-cols-3 gap-2 text-xs text-gray-400 dark:text-gray-500 mb-1 px-1">
+                  <span>Set</span><span>Duration (min)</span><span></span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-5 gap-2 text-xs text-gray-400 dark:text-gray-500 mb-1 px-1">
+                  <span>Set</span><span>Reps</span><span>Weight (lb)</span><span>RPE</span><span></span>
+                </div>
+              )}
               <div className="space-y-2">
                 {ex.sets.map((set) => {
                   const key = setKey(ex.id, set.setNumber);
-                  const input = setInputs[key] ?? { reps: "", weight: "", rpe: "" };
+                  const input = setInputs[key] ?? { reps: "", weight: "", rpe: "", duration: "" };
+                  const cardio = isCardio(ex);
                   return (
-                    <div key={set.setNumber} className={`grid grid-cols-5 gap-2 items-center ${set.completed ? "opacity-50" : ""}`}>
+                    <div key={set.setNumber} className={`grid ${cardio ? "grid-cols-3" : "grid-cols-5"} gap-2 items-center ${set.completed ? "opacity-50" : ""}`}>
                       <span className="text-sm font-medium tabular-nums">{set.setNumber}</span>
-                      <Input
-                        type="number"
-                        placeholder="reps"
-                        value={input.reps}
-                        disabled={set.completed}
-                        onChange={(e) => setSetInputs((prev) => ({ ...prev, [key]: { ...input, reps: e.target.value } }))}
-                        className="h-8 text-sm"
-                      />
-                      <Input
-                        type="number"
-                        placeholder="lb"
-                        value={input.weight}
-                        disabled={set.completed}
-                        onChange={(e) => setSetInputs((prev) => ({ ...prev, [key]: { ...input, weight: e.target.value } }))}
-                        className="h-8 text-sm"
-                      />
-                      <Input
-                        type="number"
-                        placeholder="1-10"
-                        value={input.rpe}
-                        disabled={set.completed}
-                        min={1}
-                        max={10}
-                        onChange={(e) => setSetInputs((prev) => ({ ...prev, [key]: { ...input, rpe: e.target.value } }))}
-                        className="h-8 text-sm"
-                      />
+                      {cardio ? (
+                        <Input
+                          type="number"
+                          placeholder="min"
+                          value={input.duration}
+                          disabled={set.completed}
+                          onChange={(e) => setSetInputs((prev) => ({ ...prev, [key]: { ...input, duration: e.target.value } }))}
+                          className="h-8 text-sm"
+                        />
+                      ) : (
+                        <>
+                          <Input
+                            type="number"
+                            placeholder="reps"
+                            value={input.reps}
+                            disabled={set.completed}
+                            onChange={(e) => setSetInputs((prev) => ({ ...prev, [key]: { ...input, reps: e.target.value } }))}
+                            className="h-8 text-sm"
+                          />
+                          <Input
+                            type="number"
+                            placeholder="lb"
+                            value={input.weight}
+                            disabled={set.completed}
+                            onChange={(e) => setSetInputs((prev) => ({ ...prev, [key]: { ...input, weight: e.target.value } }))}
+                            className="h-8 text-sm"
+                          />
+                          <Input
+                            type="number"
+                            placeholder="1-10"
+                            value={input.rpe}
+                            disabled={set.completed}
+                            min={1}
+                            max={10}
+                            onChange={(e) => setSetInputs((prev) => ({ ...prev, [key]: { ...input, rpe: e.target.value } }))}
+                            className="h-8 text-sm"
+                          />
+                        </>
+                      )}
                       <Button
                         size="sm"
                         variant={set.completed ? "secondary" : "default"}
