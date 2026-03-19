@@ -159,7 +159,7 @@ export default function WorkoutPage() {
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
               </div>
-            ) : stats?.recentSessions.length === 0 ? (
+            ) : stats?.recentSessions?.length === 0 ? (
               <p className="text-sm text-gray-400 py-4 text-center">No sessions yet. Start one!</p>
             ) : (
               <div className="space-y-2">
