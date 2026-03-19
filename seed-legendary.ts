@@ -11,18 +11,12 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const localPrisma = new PrismaClient({ adapter });
-// Can be overridden by seedLegendaryPrograms() when called from the app
-let prisma: PrismaClient = localPrisma;
+// Module-level prisma — only created when this module runs standalone
+let prisma!: PrismaClient;
 
 export async function seedLegendaryPrograms(customPrisma: PrismaClient) {
   prisma = customPrisma;
-  try {
-    await main();
-  } finally {
-    prisma = localPrisma;
-  }
+  await main();
 }
 
 // ---------------------------------------------------------------------------
@@ -992,7 +986,9 @@ async function upsertProgram(userId: string, def: ProgramDef) {
   });
 }
 
-// Only run standalone when executed directly (not when imported as module)
-if (require.main === module) {
-  main().catch(console.error).finally(() => localPrisma.$disconnect());
+// Only run when executed directly as a script (not imported as a module)
+if (process.argv[1]?.replace(/\\/g, "/").includes("seed-legendary")) {
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+  prisma = new PrismaClient({ adapter });
+  main().catch(console.error).finally(() => prisma.$disconnect());
 }
