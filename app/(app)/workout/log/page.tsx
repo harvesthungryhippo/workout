@@ -107,7 +107,7 @@ function muscleLabel(m: string) {
 
 const SESSION_STORAGE_KEY = "activeWorkoutSession";
 
-type SavedInputs = Record<string, { reps: string; weight: string; rpe: string }>;
+type SavedInputs = Record<string, { reps: string; weight: string; rpe: string; duration: string }>;
 
 function saveSessionState(sessionId: string, inputs: SavedInputs) {
   try {
@@ -207,6 +207,7 @@ export default function LogWorkoutPage() {
                       reps: set.reps?.toString() ?? "",
                       weight: set.weightKg?.toString() ?? "",
                       rpe: set.rpe?.toString() ?? "",
+                      duration: set.durationSeconds ? String(Math.round(set.durationSeconds / 60)) : "",
                     };
                   }
                 }
