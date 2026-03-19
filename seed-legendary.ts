@@ -12,7 +12,18 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+const localPrisma = new PrismaClient({ adapter });
+// Can be overridden by seedLegendaryPrograms() when called from the app
+let prisma: PrismaClient = localPrisma;
+
+export async function seedLegendaryPrograms(customPrisma: PrismaClient) {
+  prisma = customPrisma;
+  try {
+    await main();
+  } finally {
+    prisma = localPrisma;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Martial arts & combat sport specific exercises
@@ -89,13 +100,8 @@ async function main() {
   }
   console.log(`✓ ${martialArtsExercises.length} martial arts exercises seeded`);
 
-  // Find the seed user
-  const user = await prisma.workoutUser.findUnique({ where: { email: "me@workout.app" } });
-  if (!user) {
-    console.error("Seed user not found. Run `npm run seed` first.");
-    process.exit(1);
-  }
-  const userId = user.id;
+  // Use a fixed system ID so legendary programs are shared across all users
+  const userId = "SYSTEM_LEGENDARY";
 
   console.log("\nCreating legendary fighter programs...\n");
 
@@ -986,4 +992,7 @@ async function upsertProgram(userId: string, def: ProgramDef) {
   });
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+// Only run standalone when executed directly (not when imported as module)
+if (require.main === module) {
+  main().catch(console.error).finally(() => localPrisma.$disconnect());
+}
