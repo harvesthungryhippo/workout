@@ -379,7 +379,7 @@ export default function LogWorkoutPage() {
     if (res.ok) {
       const newEx = await res.json();
       setSession((prev) => prev ? { ...prev, exercises: [...prev.exercises, newEx] } : prev);
-      const inputs: Record<string, { reps: string; weight: string; rpe: string }> = {};
+      const inputs: Record<string, { reps: string; weight: string; rpe: string; duration: string }> = {};
       for (const set of newEx.sets) {
         inputs[`${newEx.id}-${set.setNumber}`] = { reps: "", weight: "", rpe: "", duration: "" };
       }
