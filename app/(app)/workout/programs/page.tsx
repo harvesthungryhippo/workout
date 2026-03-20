@@ -62,6 +62,21 @@ const CORE_PROGRAM_META: Record<string, { level: string; levelColor: string; tag
     levelColor: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     tags: ["Bodybuilding", "6 days/week", "High volume"],
   },
+  "Core Fundamentals": {
+    level: "Beginner",
+    levelColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    tags: ["Abs & Core", "3 days/week", "No equipment"],
+  },
+  "Six Pack Builder": {
+    level: "Intermediate",
+    levelColor: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+    tags: ["Abs & Core", "4 days/week", "Weighted + Bodyweight"],
+  },
+  "Athletic Core — Functional Stability": {
+    level: "Intermediate",
+    levelColor: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+    tags: ["Functional Core", "3 days/week", "Anti-rotation · Stability"],
+  },
 };
 
 export default function ProgramsPage() {
