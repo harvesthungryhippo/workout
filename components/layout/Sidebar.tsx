@@ -10,37 +10,9 @@ import {
   Download, Settings, ChevronDown, ChevronRight, Zap, Swords,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeProvider";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-const NAV_PRIMARY = [
-  { href: "/workout",            label: "Dashboard",  icon: Dumbbell },
-  { href: "/workout/log",        label: "Log Session", icon: Play },
-  { href: "/workout/programs",   label: "Programs",   icon: Dumbbell },
-  { href: "/workout/legendary",  label: "Legendary",  icon: Swords },
-  { href: "/workout/calendar",   label: "Calendar",   icon: Calendar },
-  { href: "/workout/templates",  label: "Templates",  icon: Bookmark },
-  { href: "/workout/exercises",  label: "Exercises",  icon: BookOpen },
-  { href: "/workout/progress",   label: "Progress",   icon: BarChart2 },
-  { href: "/workout/overload",   label: "Overload",   icon: TrendingUp },
-  { href: "/workout/goals",      label: "Goals",      icon: Target },
-  { href: "/workout/cardio",     label: "Cardio",     icon: Zap },
-];
-
-const NAV_HEALTH = [
-  { href: "/workout/body",      label: "Body",       icon: Scale },
-  { href: "/workout/nutrition", label: "Nutrition",  icon: Utensils },
-  { href: "/workout/water",     label: "Water",      icon: Droplets },
-  { href: "/workout/sleep",     label: "Sleep",      icon: Moon },
-  { href: "/workout/recovery",  label: "Recovery",   icon: Activity },
-];
-
-const NAV_TOOLS = [
-  { href: "/workout/1rm",       label: "1RM Calc",   icon: Calculator },
-  { href: "/workout/reminders", label: "Reminders",  icon: Bell },
-  { href: "/workout/export",    label: "Export",     icon: Download },
-  { href: "/workout/settings",  label: "Settings",   icon: Settings },
-];
-
-function NavGroup({ title, items, pathname }: { title: string; items: typeof NAV_PRIMARY; pathname: string }) {
+function NavGroup({ title, items, pathname }: { title: string; items: { href: string; label: string; icon: React.ElementType }[]; pathname: string }) {
   const [open, setOpen] = useState(true);
   return (
     <div>
@@ -80,6 +52,36 @@ function NavGroup({ title, items, pathname }: { title: string; items: typeof NAV
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const NAV_PRIMARY = [
+    { href: "/workout",            label: t.nav.dashboard,  icon: Dumbbell },
+    { href: "/workout/log",        label: t.nav.logSession, icon: Play },
+    { href: "/workout/programs",   label: t.nav.programs,   icon: Dumbbell },
+    { href: "/workout/legendary",  label: t.nav.legendary,  icon: Swords },
+    { href: "/workout/calendar",   label: t.nav.calendar,   icon: Calendar },
+    { href: "/workout/templates",  label: t.nav.templates,  icon: Bookmark },
+    { href: "/workout/exercises",  label: t.nav.exercises,  icon: BookOpen },
+    { href: "/workout/progress",   label: t.nav.progress,   icon: BarChart2 },
+    { href: "/workout/overload",   label: t.nav.overload,   icon: TrendingUp },
+    { href: "/workout/goals",      label: t.nav.goals,      icon: Target },
+    { href: "/workout/cardio",     label: t.nav.cardio,     icon: Zap },
+  ];
+
+  const NAV_HEALTH = [
+    { href: "/workout/body",      label: t.nav.body,       icon: Scale },
+    { href: "/workout/nutrition", label: t.nav.nutrition,  icon: Utensils },
+    { href: "/workout/water",     label: t.nav.water,      icon: Droplets },
+    { href: "/workout/sleep",     label: t.nav.sleep,      icon: Moon },
+    { href: "/workout/recovery",  label: t.nav.recovery,   icon: Activity },
+  ];
+
+  const NAV_TOOLS = [
+    { href: "/workout/1rm",       label: t.nav.oneRM,      icon: Calculator },
+    { href: "/workout/reminders", label: t.nav.reminders,  icon: Bell },
+    { href: "/workout/export",    label: t.nav.export,     icon: Download },
+    { href: "/workout/settings",  label: t.nav.settings,   icon: Settings },
+  ];
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -92,9 +94,9 @@ export default function Sidebar() {
         <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Workout</span>
       </div>
       <nav className="flex-1 space-y-3 px-3 py-3 overflow-y-auto">
-        <NavGroup title="Train" items={NAV_PRIMARY} pathname={pathname} />
-        <NavGroup title="Health" items={NAV_HEALTH} pathname={pathname} />
-        <NavGroup title="Tools" items={NAV_TOOLS} pathname={pathname} />
+        <NavGroup title={t.nav.train} items={NAV_PRIMARY} pathname={pathname} />
+        <NavGroup title={t.nav.health} items={NAV_HEALTH} pathname={pathname} />
+        <NavGroup title={t.nav.tools} items={NAV_TOOLS} pathname={pathname} />
       </nav>
       <div className="border-t border-gray-200 dark:border-gray-800 p-3 space-y-1">
         <ThemeToggle />
@@ -103,7 +105,7 @@ export default function Sidebar() {
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {t.nav.logout}
         </button>
       </div>
     </aside>
