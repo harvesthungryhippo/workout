@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import type { Language } from "@/lib/i18n/translations";
 
 interface Profile {
   id: string;
@@ -16,6 +18,7 @@ interface Profile {
 }
 
 export default function SettingsPage() {
+  const { language, setLanguage, t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,9 +86,40 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-lg">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t.settings.title}</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your account details.</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t.settings.language}</CardTitle>
+          <CardDescription>{t.settings.selectLanguage}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setLanguage("en")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                language === "en"
+                  ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
+                  : "border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => setLanguage("es")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                language === "es"
+                  ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
+                  : "border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              Español
+            </button>
+          </div>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <Card><CardContent className="pt-6 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></CardContent></Card>
