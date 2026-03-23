@@ -844,17 +844,30 @@ export default function LogWorkoutPage() {
       {/* Rest Timer */}
       {timer.running && (
         <Card className="bg-gray-900 text-white">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <Timer className="h-5 w-5" />
-              <div>
-                <p className="text-sm font-medium">{timerLabel}</p>
-                <p className="text-2xl font-bold tabular-nums">
-                  {Math.floor(timer.seconds / 60)}:{String(timer.seconds % 60).padStart(2, "0")}
-                </p>
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Timer className="h-5 w-5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-gray-300">{timerLabel}</p>
+                  <p className="text-2xl font-bold tabular-nums">
+                    {Math.floor(timer.seconds / 60)}:{String(timer.seconds % 60).padStart(2, "0")}
+                  </p>
+                </div>
               </div>
+              <Button variant="ghost" className="text-white hover:text-gray-300" onClick={timer.stop}>Skip</Button>
             </div>
-            <Button variant="ghost" className="text-white hover:text-gray-300" onClick={timer.stop}>Skip</Button>
+            <div className="flex gap-2 mt-3">
+              {[60, 90, 120, 180].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => timer.start(s)}
+                  className="flex-1 rounded-md bg-gray-800 hover:bg-gray-700 text-white text-xs py-1.5 font-medium transition-colors"
+                >
+                  {s < 60 ? `${s}s` : `${s / 60}min`}
+                </button>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

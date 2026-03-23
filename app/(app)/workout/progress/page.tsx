@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -36,6 +36,7 @@ interface Stats {
 }
 
 interface HistoryPoint { date: string; maxWeight: number; maxReps: number; totalVolume: number }
+interface ExerciseOption { id: string; name: string }
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -149,14 +150,28 @@ function Heatmap({ dayMap }: { dayMap: Record<string, DayData> }) {
   );
 }
 
-function ExerciseChart({ prs }: { prs: Stats["prs"] }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+function ExerciseChart({ prs, preselect }: { prs: Stats["prs"]; preselect?: string | null }) {
+  const [selectedId, setSelectedId] = useState<string | null>(preselect ?? null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [metric, setMetric] = useState<"maxWeight" | "totalVolume">("maxWeight");
+  const [metric, setMetric] = useState<"maxWeight" | "totalVolume" | "maxReps">("maxWeight");
+  const [allExercises, setAllExercises] = useState<ExerciseOption[]>([]);
+  const [search, setSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    if (!selectedId) return;
+    fetch("/api/workout/exercises")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.exercises) setAllExercises(d.exercises); })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (preselect) setSelectedId(preselect);
+  }, [preselect]);
+
+  useEffect(() => {
+    if (!selectedId) { setHistory([]); return; }
     setLoadingHistory(true);
     fetch(`/api/workout/exercises/${selectedId}/history`)
       .then((r) => r.ok ? r.json() : null)
@@ -165,35 +180,57 @@ function ExerciseChart({ prs }: { prs: Stats["prs"] }) {
       .finally(() => setLoadingHistory(false));
   }, [selectedId]);
 
-  const selected = prs.find((p) => p.exerciseId === selectedId);
+  const selectedPr = prs.find((p) => p.exerciseId === selectedId);
+  const selectedName = allExercises.find((e) => e.id === selectedId)?.name ?? selectedPr?.exerciseName ?? "";
+  const filtered = allExercises.filter((e) => e.name.toLowerCase().includes(search.toLowerCase())).slice(0, 12);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Exercise Progress</CardTitle>
-        <CardDescription>Weight or volume over time for any exercise</CardDescription>
+        <CardDescription>Weight, volume, or reps over time for any exercise</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex gap-2 flex-wrap">
-          <select
-            className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm flex-1 min-w-0"
-            value={selectedId ?? ""}
-            onChange={(e) => setSelectedId(e.target.value || null)}
-          >
-            <option value="">Select an exercise...</option>
-            {prs.map((pr) => (
-              <option key={pr.exerciseId} value={pr.exerciseId}>{pr.exerciseName}</option>
-            ))}
-          </select>
-          <div className="flex gap-1">
-            <Button size="sm" variant={metric === "maxWeight" ? "default" : "outline"} onClick={() => setMetric("maxWeight")}>Weight</Button>
-            <Button size="sm" variant={metric === "totalVolume" ? "default" : "outline"} onClick={() => setMetric("totalVolume")}>Volume</Button>
+        {/* Search input */}
+        <div className="relative">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+            <input
+              className="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-8 pr-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+              placeholder={selectedName || "Search exercises..."}
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setShowDropdown(true); }}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            />
           </div>
+          {showDropdown && search && filtered.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg max-h-48 overflow-y-auto">
+              {filtered.map((ex) => (
+                <button
+                  key={ex.id}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white"
+                  onMouseDown={() => { setSelectedId(ex.id); setSearch(""); setShowDropdown(false); }}
+                >
+                  {ex.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Metric toggle */}
+        <div className="flex gap-1">
+          {(["maxWeight", "maxReps", "totalVolume"] as const).map((m) => (
+            <Button key={m} size="sm" variant={metric === m ? "default" : "outline"} onClick={() => setMetric(m)} className="text-xs">
+              {m === "maxWeight" ? "Weight" : m === "maxReps" ? "Reps" : "Volume"}
+            </Button>
+          ))}
         </div>
 
         {!selectedId ? (
           <div className="h-40 flex items-center justify-center text-sm text-gray-400">
-            Select an exercise above to see its history
+            Search for an exercise above to see its progress
           </div>
         ) : loadingHistory ? (
           <Skeleton className="h-40 w-full" />
@@ -203,9 +240,9 @@ function ExerciseChart({ prs }: { prs: Stats["prs"] }) {
           </div>
         ) : (
           <div>
-            {selected && (
+            {selectedPr && (
               <p className="text-xs text-gray-500 mb-2">
-                All-time best: <strong>{selected.maxWeight} lb × {selected.maxReps} reps</strong>
+                All-time best: <strong>{selectedPr.maxWeight} lb × {selectedPr.maxReps} reps</strong>
               </p>
             )}
             <ResponsiveContainer width="100%" height={180}>
@@ -221,7 +258,10 @@ function ExerciseChart({ prs }: { prs: Stats["prs"] }) {
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={(v: any) => [metric === "maxWeight" ? `${v} lb` : formatVolume(Number(v)), metric === "maxWeight" ? "Max Weight" : "Volume"]}
+                  formatter={(v: any) => [
+                    metric === "maxWeight" ? `${v} lb` : metric === "maxReps" ? `${v} reps` : formatVolume(Number(v)),
+                    metric === "maxWeight" ? "Max Weight" : metric === "maxReps" ? "Max Reps" : "Volume",
+                  ]}
                   labelFormatter={(l) => new Date(l).toLocaleDateString()}
                 />
                 <Line
@@ -293,6 +333,13 @@ export default function ProgressPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  function selectExercise(id: string) {
+    setSelectedExerciseId(id);
+    setTimeout(() => chartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
 
   async function deleteSession(id: string) {
     const res = await fetch(`/api/workout/sessions/${id}`, { method: "DELETE" });
@@ -399,7 +446,7 @@ export default function ProgressPage() {
       </div>
 
       {/* Exercise Chart + Muscle Group Volume */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div ref={chartRef} className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {loading ? (
           <>
             <Skeleton className="h-64 w-full" />
@@ -407,7 +454,7 @@ export default function ProgressPage() {
           </>
         ) : (
           <>
-            <ExerciseChart prs={stats?.prs ?? []} />
+            <ExerciseChart prs={stats?.prs ?? []} preselect={selectedExerciseId} />
             <MuscleGroupChart muscleGroupVolume={stats?.muscleGroupVolume ?? {}} />
           </>
         )}
@@ -430,15 +477,23 @@ export default function ProgressPage() {
             ) : (
               <div className="divide-y">
                 {(stats?.prs ?? []).slice(0, 10).map((pr) => (
-                  <div key={pr.exerciseName} className="flex items-center justify-between py-2.5">
-                    <span className="text-sm">{pr.exerciseName}</span>
-                    <div>
-                      <span className="text-sm font-semibold">{pr.maxWeight} lb</span>
-                      <span className="text-xs text-gray-400 ml-1">× {pr.maxReps}</span>
+                  <button
+                    key={pr.exerciseName}
+                    onClick={() => selectExercise(pr.exerciseId)}
+                    className="flex items-center justify-between py-2.5 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-1 -mx-1 transition-colors group"
+                  >
+                    <span className="text-sm group-hover:text-gray-700 dark:group-hover:text-gray-200">{pr.exerciseName}</span>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <span className="text-sm font-semibold">{pr.maxWeight} lb</span>
+                        <span className="text-xs text-gray-400 ml-1">× {pr.maxReps}</span>
+                      </div>
+                      <TrendingUp className="h-3.5 w-3.5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
+              <p className="text-xs text-gray-400 mt-2">Click any exercise to view its progress chart</p>
             )}
           </CardContent>
         </Card>
