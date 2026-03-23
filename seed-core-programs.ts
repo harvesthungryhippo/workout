@@ -680,6 +680,370 @@ async function main() {
     ],
   });
 
+  // =========================================================================
+  // 10. 5/3/1 FOR BEGINNERS — Jim Wendler Style
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "5/3/1 for Beginners",
+    description:
+      "Jim Wendler's 5/3/1 adapted for beginners. Train 3 days per week across a 3-week wave cycling through Week 1 (5 reps), " +
+      "Week 2 (3 reps), and Week 3 (5/3/1 rep scheme) on the four main lifts. " +
+      "Use 90% of your true max to calculate training maxes. Accessory work follows each main lift. " +
+      "Progress your training max by 5 lbs (upper) or 10 lbs (lower) after each 3-week cycle. " +
+      "LEVEL: Beginner to Intermediate — requires knowing your approximate 1RM on the main lifts.",
+    daysPerWeek: 3,
+    durationWeeks: 12,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Day 1 — Squat & Bench",
+        exercises: [
+          { name: "Barbell Squat", sets: 3, reps: "5/3/1 wave", rest: 180, notes: "Week 1: 3×5 @ 65/75/85%. Week 2: 3×3 @ 70/80/90%. Week 3: 5/3/1 @ 75/85/95%. Always do an AMRAP on the last set." },
+          { name: "Barbell Bench Press", sets: 3, reps: "5/3/1 wave", rest: 150, notes: "Same wave as squat. Push the last set to failure — this is where progress is made." },
+          { name: "Pull-Up", sets: 5, reps: "10", rest: 75, notes: "Assistance work — use lat pulldown if needed" },
+          { name: "Dumbbell Row", sets: 5, reps: "10 each", rest: 60 },
+          { name: "Plank", sets: 3, reps: "30-60s", rest: 45 },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Day 2 — Deadlift & OHP",
+        exercises: [
+          { name: "Deadlift", sets: 3, reps: "5/3/1 wave", rest: 180, notes: "Wave matches Day 1 structure. Last set is AMRAP — this will define your next cycle's max." },
+          { name: "Overhead Press", sets: 3, reps: "5/3/1 wave", rest: 150, notes: "Same percentage wave. Go for max reps on the final set." },
+          { name: "Barbell Row", sets: 5, reps: "10", rest: 75, notes: "Assistance — stay strict, row to lower chest" },
+          { name: "Dumbbell Curl", sets: 5, reps: "10", rest: 60 },
+          { name: "Tricep Pushdown", sets: 5, reps: "10", rest: 60 },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Day 3 — Full Body & Assistance",
+        exercises: [
+          { name: "Barbell Squat", sets: 5, reps: "5", rest: 120, notes: "70% of training max — speed and technique work, not max effort" },
+          { name: "Barbell Bench Press", sets: 5, reps: "5", rest: 90, notes: "70% of training max — same as squat, focus on bar path and speed" },
+          { name: "Deadlift", sets: 1, reps: "5", rest: 180, notes: "70% of training max — single quality set to reinforce the pattern" },
+          { name: "Pull-Up", sets: 5, reps: "10", rest: 75 },
+          { name: "Hanging Leg Raise", sets: 3, reps: "15", rest: 45 },
+        ],
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 11. 5-DAY BODYBUILDER SPLIT — Classic Bro Split
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "5-Day Bodybuilder Split",
+    description:
+      "The classic bodybuilding 'bro split' — one muscle group per day, 5 days per week. " +
+      "High volume per muscle group per session with 2 days rest. " +
+      "Trains chest Monday, back Tuesday, shoulders Wednesday, arms Thursday, legs Friday. " +
+      "Ideal for intermediate lifters who want to maximize hypertrophy with high per-session volume. " +
+      "LEVEL: Intermediate — requires solid mind-muscle connection and 6+ months of training.",
+    daysPerWeek: 5,
+    durationWeeks: 8,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Monday — Chest",
+        exercises: [
+          { name: "Barbell Bench Press", sets: 4, reps: "6-8", rest: 120, notes: "Primary horizontal push — set the bar over lower chest" },
+          { name: "Incline Dumbbell Press", sets: 4, reps: "10-12", rest: 90, notes: "Upper chest emphasis" },
+          { name: "Dumbbell Flye", sets: 3, reps: "12-15", rest: 75, notes: "Full stretch at bottom, squeeze at top" },
+          { name: "Cable Crossover", sets: 3, reps: "15-20", rest: 60, notes: "High-to-low cable for lower chest" },
+          { name: "Push-Up", sets: 3, reps: "max", rest: 60, notes: "Burnout set at the end" },
+          { name: "Close-Grip Bench Press", sets: 3, reps: "10-12", rest: 75, notes: "Tricep finisher on chest day" },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Tuesday — Back",
+        exercises: [
+          { name: "Deadlift", sets: 3, reps: "5-6", rest: 180, notes: "Heavy hinge to kick off back day" },
+          { name: "Pull-Up", sets: 4, reps: "8-12", rest: 120, notes: "Add weight if bodyweight is easy" },
+          { name: "Barbell Row", sets: 4, reps: "8-10", rest: 120, notes: "Row to lower chest, elbows back" },
+          { name: "Seated Cable Row", sets: 3, reps: "12-15", rest: 90 },
+          { name: "Lat Pulldown", sets: 3, reps: "12-15", rest: 75, notes: "Wide grip — pull elbows down and back" },
+          { name: "Dumbbell Row", sets: 3, reps: "12-15 each", rest: 75 },
+          { name: "Face Pull", sets: 3, reps: "20", rest: 60, notes: "Shoulder health — external rotation" },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Wednesday — Shoulders",
+        exercises: [
+          { name: "Overhead Press", sets: 4, reps: "6-8", rest: 120, notes: "Primary vertical push — brace hard" },
+          { name: "Arnold Press", sets: 4, reps: "10-12", rest: 90 },
+          { name: "Dumbbell Lateral Raise", sets: 5, reps: "15-20", rest: 60, notes: "Medial delt isolation — control the eccentric" },
+          { name: "Dumbbell Front Raise", sets: 3, reps: "12-15", rest: 60 },
+          { name: "Face Pull", sets: 4, reps: "20", rest: 60, notes: "Rear delts and rotator cuff health" },
+          { name: "Barbell Row", sets: 3, reps: "12-15", rest: 75, notes: "Upright row variation — rear delt finisher" },
+        ],
+      },
+      {
+        dayNumber: 4,
+        name: "Thursday — Arms",
+        exercises: [
+          { name: "Barbell Curl", sets: 4, reps: "8-10", rest: 90, notes: "Primary bicep mass builder" },
+          { name: "Skull Crusher", sets: 4, reps: "8-10", rest: 90, notes: "Primary tricep mass builder" },
+          { name: "Hammer Curl", sets: 3, reps: "10-12", rest: 75, notes: "Brachialis and forearm development" },
+          { name: "Tricep Pushdown", sets: 3, reps: "12-15", rest: 60 },
+          { name: "Incline Dumbbell Curl", sets: 3, reps: "12-15", rest: 60, notes: "Long head stretch at bottom" },
+          { name: "Overhead Tricep Extension", sets: 3, reps: "12-15", rest: 60, notes: "Long head emphasis" },
+          { name: "Cable Curl", sets: 3, reps: "15-20", rest: 60, notes: "Constant tension finisher" },
+          { name: "Diamond Push-Up", sets: 3, reps: "max", rest: 60, notes: "Tricep burnout" },
+        ],
+      },
+      {
+        dayNumber: 5,
+        name: "Friday — Legs",
+        exercises: [
+          { name: "Barbell Squat", sets: 4, reps: "6-10", rest: 150, notes: "Drive the legs — high volume leg day" },
+          { name: "Romanian Deadlift", sets: 4, reps: "10-12", rest: 120, notes: "Hamstring and glute hinge" },
+          { name: "Leg Press", sets: 4, reps: "12-15", rest: 90 },
+          { name: "Leg Extension", sets: 4, reps: "15-20", rest: 60 },
+          { name: "Leg Curl", sets: 4, reps: "12-15", rest: 75 },
+          { name: "Hip Thrust", sets: 3, reps: "15-20", rest: 90, notes: "Glute finisher" },
+          { name: "Standing Calf Raise", sets: 5, reps: "15-20", rest: 60 },
+          { name: "Seated Calf Raise", sets: 4, reps: "20", rest: 60 },
+        ],
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 12. GERMAN VOLUME TRAINING (GVT) — 10×10
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "German Volume Training (GVT)",
+    description:
+      "One of the most brutal and effective hypertrophy programs ever designed. " +
+      "The core principle: 10 sets of 10 reps on one primary compound movement per muscle group with 60% of your 1RM and 60-90 seconds rest. " +
+      "Originally used by German national weightlifters in the off-season to rapidly add muscle mass. " +
+      "Expect soreness unlike anything else. Run for 4–6 weeks before deloading. " +
+      "LEVEL: Intermediate — not for beginners. Mental toughness required.",
+    daysPerWeek: 4,
+    durationWeeks: 6,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Day 1 — Chest & Back",
+        exercises: [
+          { name: "Barbell Bench Press", sets: 10, reps: "10", rest: 90, notes: "Use 60% of 1RM. Rest exactly 90 seconds. Do NOT increase weight until all 10×10 are complete with proper form." },
+          { name: "Barbell Row", sets: 10, reps: "10", rest: 90, notes: "Superset with bench if possible — alternate between sets to save time and maximize the pump." },
+          { name: "Incline Dumbbell Press", sets: 3, reps: "15-20", rest: 60, notes: "Accessory work — these are not 10×10" },
+          { name: "Face Pull", sets: 3, reps: "15-20", rest: 60 },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Day 2 — Legs & Abs",
+        exercises: [
+          { name: "Barbell Squat", sets: 10, reps: "10", rest: 90, notes: "The hardest day. Use 60% of 1RM. Sets 6–10 will be extremely difficult — this is where the growth happens." },
+          { name: "Romanian Deadlift", sets: 10, reps: "10", rest: 90, notes: "Superset with squats. Deep stretch at the bottom — full range of motion." },
+          { name: "Leg Curl", sets: 3, reps: "15-20", rest: 60 },
+          { name: "Crunch", sets: 3, reps: "25", rest: 45 },
+          { name: "Hanging Leg Raise", sets: 3, reps: "15", rest: 45 },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Day 3 — Shoulders & Arms",
+        exercises: [
+          { name: "Overhead Press", sets: 10, reps: "10", rest: 90, notes: "60% of 1RM. Strict form — no leg drive." },
+          { name: "Barbell Curl", sets: 10, reps: "10", rest: 90, notes: "Superset with OHP. Slow and controlled, full range of motion." },
+          { name: "Dumbbell Lateral Raise", sets: 3, reps: "15-20", rest: 60 },
+          { name: "Tricep Pushdown", sets: 3, reps: "15-20", rest: 60 },
+        ],
+      },
+      {
+        dayNumber: 4,
+        name: "Day 4 — Back & Biceps",
+        exercises: [
+          { name: "Pull-Up", sets: 10, reps: "10", rest: 90, notes: "If you can't do 10×10 pull-ups, use lat pulldown at 60% bodyweight. Add weight as needed." },
+          { name: "Seated Cable Row", sets: 10, reps: "10", rest: 90, notes: "Superset with pull-ups. Focus on squeezing the back at the peak." },
+          { name: "Lat Pulldown", sets: 3, reps: "15-20", rest: 60 },
+          { name: "Hammer Curl", sets: 3, reps: "15-20", rest: 60 },
+        ],
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 13. BODYWEIGHT ONLY — No Equipment
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "Bodyweight Only — No Equipment",
+    description:
+      "A complete 4-day bodyweight program requiring zero equipment. " +
+      "Trains pushing, pulling, legs, and core with progressive overload via harder variations, slower tempos, and more reps. " +
+      "Suitable for home training, travel, or anyone without gym access. " +
+      "Progress by advancing to harder variations: push-up → diamond push-up → archer push-up. Pull-up → weighted pull-up. " +
+      "LEVEL: Beginner to Intermediate — scales with your ability.",
+    daysPerWeek: 4,
+    durationWeeks: 8,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Push Day — Chest, Shoulders & Triceps",
+        exercises: [
+          { name: "Push-Up", sets: 4, reps: "15-20", rest: 75, notes: "Standard. Progress to archer push-up or feet-elevated push-up as you get stronger." },
+          { name: "Diamond Push-Up", sets: 4, reps: "10-15", rest: 75, notes: "Tricep and inner chest emphasis. Elbows stay close to body." },
+          { name: "Chest Dip", sets: 4, reps: "10-15", rest: 90, notes: "Lean forward to hit chest. Lean upright for triceps. Needs parallel bars or sturdy chairs." },
+          { name: "Pike Push-Up", sets: 3, reps: "10-15", rest: 75, notes: "Shoulder press substitute — hips high, head through at bottom" },
+          { name: "Plank", sets: 3, reps: "45-60s", rest: 45 },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Pull Day — Back & Biceps",
+        exercises: [
+          { name: "Pull-Up", sets: 4, reps: "6-12", rest: 120, notes: "Most important bodyweight exercise. Use bands for assistance. Progress to weighted." },
+          { name: "Hanging Leg Raise", sets: 3, reps: "10-15", rest: 60, notes: "Use the bar between sets of pull-ups" },
+          { name: "Dumbbell Row", sets: 4, reps: "12-15 each", rest: 75, notes: "Single dumbbell needed. Or substitute with a bag of books." },
+          { name: "Barbell Curl", sets: 3, reps: "10-15", rest: 60, notes: "Substitute: towel curl using a table edge, or any weighted object" },
+          { name: "Dead Bug", sets: 3, reps: "10 each side", rest: 45 },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Legs — Quads, Hamstrings & Glutes",
+        exercises: [
+          { name: "Bulgarian Split Squat", sets: 4, reps: "12-15 each", rest: 90, notes: "Use a couch or chair for rear foot elevation. Most effective bodyweight leg exercise." },
+          { name: "Glute Bridge", sets: 4, reps: "20-25", rest: 60, notes: "Progress to single-leg glute bridge when too easy" },
+          { name: "Romanian Deadlift", sets: 3, reps: "15-20", rest: 75, notes: "Use a dumbbell, bag, or any weighted object. Feel the hamstring stretch." },
+          { name: "Hip Thrust", sets: 4, reps: "20-25", rest: 75, notes: "Shoulders on a couch/bench. Drive hips up explosively." },
+          { name: "Standing Calf Raise", sets: 4, reps: "25-30", rest: 45, notes: "Single-leg for progression. Stand on a step for full range." },
+        ],
+      },
+      {
+        dayNumber: 4,
+        name: "Core & Full Body",
+        exercises: [
+          { name: "Ab Wheel Rollout", sets: 4, reps: "10-15", rest: 60, notes: "From knees. Build to full standing rollouts over time." },
+          { name: "Plank", sets: 3, reps: "60s", rest: 45 },
+          { name: "Push-Up", sets: 3, reps: "max", rest: 60, notes: "Full burnout set — go to absolute failure" },
+          { name: "Pull-Up", sets: 3, reps: "max", rest: 90, notes: "Burnout set — every rep counts" },
+          { name: "Crunch", sets: 3, reps: "25-30", rest: 45 },
+          { name: "Russian Twist", sets: 3, reps: "20 each side", rest: 45 },
+          { name: "Hanging Leg Raise", sets: 3, reps: "15", rest: 60 },
+        ],
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 14. TEXAS METHOD — Intermediate Strength
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "Texas Method — Intermediate Strength",
+    description:
+      "Mark Rippetoe's Texas Method is the gold standard intermediate strength program for lifters who have stalled on linear progression. " +
+      "Three days per week: Monday is Volume Day (5×5 at 90% of Friday's max), Wednesday is Light/Recovery Day, and Friday is Intensity Day (new PR attempt). " +
+      "The weekly stress-recovery-adaptation cycle drives continued strength gains after beginner linear progression stalls. " +
+      "LEVEL: Intermediate — for lifters who can squat 1.5× bodyweight and bench 1× bodyweight.",
+    daysPerWeek: 3,
+    durationWeeks: 12,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Monday — Volume Day",
+        exercises: [
+          { name: "Barbell Squat", sets: 5, reps: "5", rest: 180, notes: "90% of Friday's intensity weight. This is the hard day — 25 total reps will be fatiguing." },
+          { name: "Barbell Bench Press", sets: 5, reps: "5", rest: 150, notes: "90% of Friday's max. Alternate with OHP each week." },
+          { name: "Barbell Row", sets: 5, reps: "5", rest: 120, notes: "Heavy — heavier each week. Row to lower chest." },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Wednesday — Recovery Day",
+        exercises: [
+          { name: "Barbell Squat", sets: 2, reps: "5", rest: 150, notes: "80% of Monday's weight. This day exists to keep the pattern — do NOT go heavy." },
+          { name: "Overhead Press", sets: 3, reps: "5", rest: 120, notes: "Alternates with bench on Monday/Friday. This is your volume day for OHP." },
+          { name: "Deadlift", sets: 1, reps: "5", rest: 300, notes: "One quality work set at 90-100%. Deadlift only once a week at this stage." },
+          { name: "Pull-Up", sets: 3, reps: "max", rest: 90, notes: "Assistance. Aim for more reps each week." },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Friday — Intensity Day",
+        exercises: [
+          { name: "Barbell Squat", sets: 1, reps: "5", rest: 300, notes: "New 5-rep PR attempt. This is heavier than last week. Take longer rest if needed — this is the goal of the week." },
+          { name: "Barbell Bench Press", sets: 1, reps: "5", rest: 240, notes: "New 5-rep PR. Alternates with OHP as primary. Add 5 lbs from last Friday." },
+          { name: "Barbell Row", sets: 1, reps: "5", rest: 180, notes: "Heaviest set of the week. Add weight from last Friday." },
+          { name: "Deadlift", sets: 1, reps: "5", rest: 300, notes: "Optional — can move to Wednesday only as training advances" },
+        ],
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 15. POWERBUILDING — Strength Meets Size
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "Powerbuilding — Strength Meets Size",
+    description:
+      "A 4-day program that combines the heavy compound work of powerlifting with the volume and isolation work of bodybuilding. " +
+      "Each session starts with a heavy main lift (1–5 reps) for strength, then transitions to moderate-weight hypertrophy accessories. " +
+      "You build a big total AND a big physique. Run on a Mon/Tue/Thu/Fri schedule. " +
+      "LEVEL: Intermediate — requires knowing your approximate maxes on the big four lifts.",
+    daysPerWeek: 4,
+    durationWeeks: 10,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Day 1 — Squat Focus",
+        exercises: [
+          { name: "Barbell Squat", sets: 5, reps: "3-5", rest: 240, notes: "Work up to a heavy top set, then do 3–4 back-off sets at 80%." },
+          { name: "Romanian Deadlift", sets: 4, reps: "10-12", rest: 120, notes: "Hypertrophy accessory — control the eccentric" },
+          { name: "Bulgarian Split Squat", sets: 3, reps: "10-12 each", rest: 90 },
+          { name: "Leg Press", sets: 3, reps: "15-20", rest: 90 },
+          { name: "Leg Curl", sets: 4, reps: "12-15", rest: 75 },
+          { name: "Standing Calf Raise", sets: 4, reps: "15-20", rest: 60 },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Day 2 — Bench Focus",
+        exercises: [
+          { name: "Barbell Bench Press", sets: 5, reps: "3-5", rest: 210, notes: "Heavy top set + back-off sets at 80%. Add 5 lbs to top set weekly." },
+          { name: "Close-Grip Bench Press", sets: 4, reps: "8-10", rest: 120, notes: "Tricep strength carries over to the main bench" },
+          { name: "Incline Dumbbell Press", sets: 4, reps: "10-12", rest: 90 },
+          { name: "Cable Crossover", sets: 3, reps: "15-20", rest: 60 },
+          { name: "Skull Crusher", sets: 4, reps: "10-12", rest: 75 },
+          { name: "Tricep Pushdown", sets: 3, reps: "15-20", rest: 60 },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Day 3 — Deadlift Focus",
+        exercises: [
+          { name: "Deadlift", sets: 4, reps: "2-4", rest: 300, notes: "Work up to max effort. This is your heaviest lift of the week — brace hard." },
+          { name: "Barbell Row", sets: 4, reps: "6-8", rest: 150, notes: "Heavy row to build deadlift lockout strength" },
+          { name: "Pull-Up", sets: 4, reps: "8-12", rest: 120, notes: "Add weight if easy" },
+          { name: "Lat Pulldown", sets: 3, reps: "12-15", rest: 90 },
+          { name: "Seated Cable Row", sets: 3, reps: "12-15", rest: 75 },
+          { name: "Barbell Curl", sets: 4, reps: "10-12", rest: 60 },
+          { name: "Hammer Curl", sets: 3, reps: "12-15", rest: 60 },
+        ],
+      },
+      {
+        dayNumber: 4,
+        name: "Day 4 — Overhead & Accessories",
+        exercises: [
+          { name: "Overhead Press", sets: 5, reps: "3-5", rest: 180, notes: "Heavy overhead for shoulder strength. Press the bar in a straight line — bar touches upper chest at bottom." },
+          { name: "Arnold Press", sets: 4, reps: "10-12", rest: 90 },
+          { name: "Dumbbell Lateral Raise", sets: 5, reps: "15-20", rest: 60 },
+          { name: "Face Pull", sets: 4, reps: "20", rest: 60, notes: "Non-negotiable — shoulder longevity" },
+          { name: "Hip Thrust", sets: 4, reps: "15-20", rest: 90, notes: "Glute work on overhead day to balance the week" },
+          { name: "Hanging Leg Raise", sets: 3, reps: "15", rest: 60 },
+          { name: "Plank", sets: 3, reps: "45-60s", rest: 45 },
+        ],
+      },
+    ],
+  });
+
   console.log("\n✅ Core programs seeded successfully.\n");
 }
 
