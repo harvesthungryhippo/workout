@@ -6,23 +6,28 @@ import { ExerciseCategory, ExerciseEquipment, MuscleGroup } from "@prisma/client
 
 // GET /api/workout/exercises — list exercises with optional filters
 async function getExercises(req: AuthedRequest) {
-  const { searchParams } = new URL(req.url);
-  const search = searchParams.get("search") ?? "";
-  const category = searchParams.get("category") ?? undefined;
-  const muscleGroup = searchParams.get("muscleGroup") ?? undefined;
-  const equipment = searchParams.get("equipment") ?? undefined;
+  try {
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search") ?? "";
+    const category = searchParams.get("category") ?? undefined;
+    const muscleGroup = searchParams.get("muscleGroup") ?? undefined;
+    const equipment = searchParams.get("equipment") ?? undefined;
 
-  const exercises = await prisma.exercise.findMany({
-    where: {
-      ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
-      ...(category ? { category: category as ExerciseCategory } : {}),
-      ...(muscleGroup ? { muscleGroup: muscleGroup as MuscleGroup } : {}),
-      ...(equipment ? { equipment: equipment as ExerciseEquipment } : {}),
-    },
-    orderBy: [{ muscleGroup: "asc" }, { name: "asc" }],
-  });
+    const exercises = await prisma.exercise.findMany({
+      where: {
+        ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
+        ...(category ? { category: category as ExerciseCategory } : {}),
+        ...(muscleGroup ? { muscleGroup: muscleGroup as MuscleGroup } : {}),
+        ...(equipment ? { equipment: equipment as ExerciseEquipment } : {}),
+      },
+      orderBy: [{ muscleGroup: "asc" }, { name: "asc" }],
+    });
 
-  return NextResponse.json({ exercises });
+    return NextResponse.json({ exercises });
+  } catch (e) {
+    console.error("[exercises GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 // POST /api/workout/exercises — create a custom exercise
@@ -42,17 +47,22 @@ async function createExercise(req: AuthedRequest) {
     return NextResponse.json({ error: "Invalid request.", details: e }, { status: 400 });
   }
 
-  const exercise = await prisma.exercise.create({
-    data: {
-      name: body.name,
-      category: body.category,
-      muscleGroup: body.muscleGroup,
-      equipment: body.equipment ?? ExerciseEquipment.NONE,
-      instructions: body.instructions,
-    },
-  });
+  try {
+    const exercise = await prisma.exercise.create({
+      data: {
+        name: body.name,
+        category: body.category,
+        muscleGroup: body.muscleGroup,
+        equipment: body.equipment ?? ExerciseEquipment.NONE,
+        instructions: body.instructions,
+      },
+    });
 
-  return NextResponse.json(exercise, { status: 201 });
+    return NextResponse.json(exercise, { status: 201 });
+  } catch (e) {
+    console.error("[exercises POST] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export const GET = withAuth(getExercises);

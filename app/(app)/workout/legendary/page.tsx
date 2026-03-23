@@ -100,8 +100,8 @@ export default function LegendaryProgramsPage() {
 
   useEffect(() => {
     fetch("/api/workout/legendary")
-      .then((r) => r.json())
-      .then((d) => setPrograms(d.programs ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setPrograms(d.programs ?? []); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

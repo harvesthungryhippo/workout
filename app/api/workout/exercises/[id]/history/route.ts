@@ -5,55 +5,60 @@ import { withAuth, type AuthedRequest, type Params } from "@/lib/api/withAuth";
 // GET /api/workout/exercises/[id]/history
 // Returns per-session max weight, max reps, and total volume for a given exercise
 async function getHistory(req: AuthedRequest, ctx: Params) {
-  const { id } = await ctx.params;
+  try {
+    const { id } = await ctx.params;
 
-  const sessionExercises = await prisma.sessionExercise.findMany({
-    where: {
-      exerciseId: id,
-      session: { userId: req.session.userId, completedAt: { not: null } },
-    },
-    include: {
-      sets: true,
-      session: { select: { startedAt: true } },
-    },
-    orderBy: { session: { startedAt: "asc" } },
-  });
+    const sessionExercises = await prisma.sessionExercise.findMany({
+      where: {
+        exerciseId: id,
+        session: { userId: req.session.userId, completedAt: { not: null } },
+      },
+      include: {
+        sets: true,
+        session: { select: { startedAt: true } },
+      },
+      orderBy: { session: { startedAt: "asc" } },
+    });
 
-  const KG_TO_LB = 2.20462;
+    const KG_TO_LB = 2.20462;
 
-  type SessionExerciseWithSets = (typeof sessionExercises)[number];
-  const history = sessionExercises.map((se: SessionExerciseWithSets) => {
-    let maxWeightKg = 0;
-    let maxReps = 0;
-    let totalVolumeKg = 0;
-    for (const set of se.sets) {
-      if (!set.completed) continue;
-      const w = Number(set.weightKg ?? 0);
-      const r = set.reps ?? 0;
-      if (w > maxWeightKg) {
-        maxWeightKg = w;
-        maxReps = r;
+    type SessionExerciseWithSets = (typeof sessionExercises)[number];
+    const history = sessionExercises.map((se: SessionExerciseWithSets) => {
+      let maxWeightKg = 0;
+      let maxReps = 0;
+      let totalVolumeKg = 0;
+      for (const set of se.sets) {
+        if (!set.completed) continue;
+        const w = Number(set.weightKg ?? 0);
+        const r = set.reps ?? 0;
+        if (w > maxWeightKg) {
+          maxWeightKg = w;
+          maxReps = r;
+        }
+        totalVolumeKg += w * r;
       }
-      totalVolumeKg += w * r;
-    }
-    return {
-      date: se.session.startedAt.toISOString().slice(0, 10),
-      maxWeight: Math.round(maxWeightKg * KG_TO_LB * 10) / 10,
-      maxReps,
-      totalVolume: Math.round(totalVolumeKg * KG_TO_LB),
-    };
-  });
+      return {
+        date: se.session.startedAt.toISOString().slice(0, 10),
+        maxWeight: Math.round(maxWeightKg * KG_TO_LB * 10) / 10,
+        maxReps,
+        totalVolume: Math.round(totalVolumeKg * KG_TO_LB),
+      };
+    });
 
-  // If multiple sessions on same day, keep the best
-  const byDay: Record<string, typeof history[0]> = {};
-  for (const h of history) {
-    const existing = byDay[h.date];
-    if (!existing || h.maxWeight > existing.maxWeight) {
-      byDay[h.date] = h;
+    // If multiple sessions on same day, keep the best
+    const byDay: Record<string, typeof history[0]> = {};
+    for (const h of history) {
+      const existing = byDay[h.date];
+      if (!existing || h.maxWeight > existing.maxWeight) {
+        byDay[h.date] = h;
+      }
     }
+
+    return NextResponse.json(Object.values(byDay));
+  } catch (e) {
+    console.error("[exercises/[id]/history GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-
-  return NextResponse.json(Object.values(byDay));
 }
 
 export const GET = withAuth(getHistory);

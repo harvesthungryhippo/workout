@@ -9,38 +9,48 @@ const updateSchema = z.object({
 });
 
 async function updateExercise(req: AuthedRequest, ctx: Params) {
-  const { id, exId } = await ctx.params;
+  try {
+    const { id, exId } = await ctx.params;
 
-  const session = await prisma.workoutSession.findFirst({
-    where: { id, userId: req.session.userId },
-  });
-  if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    const session = await prisma.workoutSession.findFirst({
+      where: { id, userId: req.session.userId },
+    });
+    if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  let body: z.infer<typeof updateSchema>;
-  try { body = updateSchema.parse(await req.json()); }
-  catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+    let body: z.infer<typeof updateSchema>;
+    try { body = updateSchema.parse(await req.json()); }
+    catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
 
-  const updated = await prisma.sessionExercise.update({
-    where: { id: exId },
-    data: {
-      ...(body.notes !== undefined ? { notes: body.notes } : {}),
-      ...(body.supersetGroup !== undefined ? { supersetGroup: body.supersetGroup } : {}),
-    },
-  });
+    const updated = await prisma.sessionExercise.update({
+      where: { id: exId },
+      data: {
+        ...(body.notes !== undefined ? { notes: body.notes } : {}),
+        ...(body.supersetGroup !== undefined ? { supersetGroup: body.supersetGroup } : {}),
+      },
+    });
 
-  return NextResponse.json(updated);
+    return NextResponse.json(updated);
+  } catch (e) {
+    console.error("[sessions/[id]/exercises/[exId] PATCH] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 async function removeExercise(req: AuthedRequest, ctx: Params) {
-  const { id, exId } = await ctx.params;
+  try {
+    const { id, exId } = await ctx.params;
 
-  const session = await prisma.workoutSession.findFirst({
-    where: { id, userId: req.session.userId },
-  });
-  if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    const session = await prisma.workoutSession.findFirst({
+      where: { id, userId: req.session.userId },
+    });
+    if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  await prisma.sessionExercise.delete({ where: { id: exId } });
-  return NextResponse.json({ ok: true });
+    await prisma.sessionExercise.delete({ where: { id: exId } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[sessions/[id]/exercises/[exId] DELETE] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export const PATCH = withAuth(updateExercise);

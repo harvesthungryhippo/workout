@@ -5,18 +5,23 @@ import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 // GET /api/workout/programs — list programs for the current user
 async function getPrograms(req: AuthedRequest) {
-  const programs = await prisma.workoutProgram.findMany({
-    where: { userId: req.session.userId },
-    include: {
-      days: {
-        include: { exercises: { include: { exercise: true }, orderBy: { order: "asc" } } },
-        orderBy: { dayNumber: "asc" },
+  try {
+    const programs = await prisma.workoutProgram.findMany({
+      where: { userId: req.session.userId },
+      include: {
+        days: {
+          include: { exercises: { include: { exercise: true }, orderBy: { order: "asc" } } },
+          orderBy: { dayNumber: "asc" },
+        },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    });
 
-  return NextResponse.json({ programs });
+    return NextResponse.json({ programs });
+  } catch (e) {
+    console.error("[programs GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 // POST /api/workout/programs — create a new program
@@ -52,48 +57,53 @@ async function createProgram(req: AuthedRequest) {
     return NextResponse.json({ error: "Invalid request.", details: e }, { status: 400 });
   }
 
-  // If setting as active, deactivate all other programs for this user
-  if (body.active) {
-    await prisma.workoutProgram.updateMany({
-      where: { userId: req.session.userId, active: true },
-      data: { active: false },
+  try {
+    // If setting as active, deactivate all other programs for this user
+    if (body.active) {
+      await prisma.workoutProgram.updateMany({
+        where: { userId: req.session.userId, active: true },
+        data: { active: false },
+      });
+    }
+
+    const program = await prisma.workoutProgram.create({
+      data: {
+        userId: req.session.userId,
+        name: body.name,
+        description: body.description,
+        daysPerWeek: body.daysPerWeek,
+        durationWeeks: body.durationWeeks,
+        active: body.active,
+        days: {
+          create: body.days.map((day) => ({
+            dayNumber: day.dayNumber,
+            name: day.name,
+            exercises: {
+              create: day.exercises.map((ex) => ({
+                exerciseId: ex.exerciseId,
+                order: ex.order,
+                sets: ex.sets,
+                reps: ex.reps,
+                restSeconds: ex.restSeconds,
+                notes: ex.notes,
+              })),
+            },
+          })),
+        },
+      },
+      include: {
+        days: {
+          include: { exercises: { include: { exercise: true }, orderBy: { order: "asc" } } },
+          orderBy: { dayNumber: "asc" },
+        },
+      },
     });
+
+    return NextResponse.json(program, { status: 201 });
+  } catch (e) {
+    console.error("[programs POST] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-
-  const program = await prisma.workoutProgram.create({
-    data: {
-      userId: req.session.userId,
-      name: body.name,
-      description: body.description,
-      daysPerWeek: body.daysPerWeek,
-      durationWeeks: body.durationWeeks,
-      active: body.active,
-      days: {
-        create: body.days.map((day) => ({
-          dayNumber: day.dayNumber,
-          name: day.name,
-          exercises: {
-            create: day.exercises.map((ex) => ({
-              exerciseId: ex.exerciseId,
-              order: ex.order,
-              sets: ex.sets,
-              reps: ex.reps,
-              restSeconds: ex.restSeconds,
-              notes: ex.notes,
-            })),
-          },
-        })),
-      },
-    },
-    include: {
-      days: {
-        include: { exercises: { include: { exercise: true }, orderBy: { order: "asc" } } },
-        orderBy: { dayNumber: "asc" },
-      },
-    },
-  });
-
-  return NextResponse.json(program, { status: 201 });
 }
 
 export const GET = withAuth(getPrograms);

@@ -4,15 +4,20 @@ import { prisma } from "@/lib/db/prisma";
 import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 async function getSleep(req: AuthedRequest) {
-  const { searchParams } = new URL(req.url);
-  const limit = parseInt(searchParams.get("limit") ?? "30");
+  try {
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get("limit") ?? "30");
 
-  const entries = await prisma.sleepEntry.findMany({
-    where: { userId: req.session.userId },
-    orderBy: { date: "desc" },
-    take: limit,
-  });
-  return NextResponse.json({ entries });
+    const entries = await prisma.sleepEntry.findMany({
+      where: { userId: req.session.userId },
+      orderBy: { date: "desc" },
+      take: limit,
+    });
+    return NextResponse.json({ entries });
+  } catch (e) {
+    console.error("[sleep GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 const createSchema = z.object({

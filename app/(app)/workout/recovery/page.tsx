@@ -57,8 +57,8 @@ export default function RecoveryPage() {
 
   useEffect(() => {
     fetch("/api/workout/recovery?limit=30")
-      .then((r) => r.json())
-      .then((d) => setEntries(d.entries ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setEntries(d.entries ?? []); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

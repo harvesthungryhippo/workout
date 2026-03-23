@@ -55,10 +55,9 @@ export default function CalendarPage() {
     setLoading(true);
     // Fetch stats for the past year to get dayMap
     fetch("/api/workout/stats?days=365")
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : null)
       .then((d) => {
-        setDayMap(d.dayMap ?? {});
-        setSessions(d.recentSessions ?? []);
+        if (d) { setDayMap(d.dayMap ?? {}); setSessions(d.recentSessions ?? []); }
       })
       .catch(console.error)
       .finally(() => setLoading(false));

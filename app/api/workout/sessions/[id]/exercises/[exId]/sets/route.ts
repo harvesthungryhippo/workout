@@ -14,52 +14,57 @@ const updateSchema = z.object({
 });
 
 async function updateSet(req: AuthedRequest, ctx: Params) {
-  const { id, exId } = await ctx.params;
-
-  // Verify session belongs to user
-  const session = await prisma.workoutSession.findFirst({
-    where: { id, userId: req.session.userId },
-  });
-  if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
-
-  const sessionExercise = await prisma.sessionExercise.findFirst({
-    where: { id: exId, sessionId: id },
-  });
-  if (!sessionExercise) return NextResponse.json({ error: "Exercise not found." }, { status: 404 });
-
-  let body: z.infer<typeof updateSchema>;
   try {
-    body = updateSchema.parse(await req.json());
-  } catch (e) {
-    return NextResponse.json({ error: "Invalid request.", details: e }, { status: 400 });
-  }
+    const { id, exId } = await ctx.params;
 
-  const workoutSet = await prisma.workoutSet.upsert({
-    where: {
-      sessionExerciseId_setNumber: {
+    // Verify session belongs to user
+    const session = await prisma.workoutSession.findFirst({
+      where: { id, userId: req.session.userId },
+    });
+    if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
+
+    const sessionExercise = await prisma.sessionExercise.findFirst({
+      where: { id: exId, sessionId: id },
+    });
+    if (!sessionExercise) return NextResponse.json({ error: "Exercise not found." }, { status: 404 });
+
+    let body: z.infer<typeof updateSchema>;
+    try {
+      body = updateSchema.parse(await req.json());
+    } catch (e) {
+      return NextResponse.json({ error: "Invalid request.", details: e }, { status: 400 });
+    }
+
+    const workoutSet = await prisma.workoutSet.upsert({
+      where: {
+        sessionExerciseId_setNumber: {
+          sessionExerciseId: exId,
+          setNumber: body.setNumber,
+        },
+      },
+      update: {
+        reps: body.reps,
+        weightKg: body.weightKg,
+        durationSeconds: body.durationSeconds,
+        completed: body.completed,
+        rpe: body.rpe,
+      },
+      create: {
         sessionExerciseId: exId,
         setNumber: body.setNumber,
+        reps: body.reps,
+        weightKg: body.weightKg,
+        durationSeconds: body.durationSeconds,
+        completed: body.completed ?? false,
+        rpe: body.rpe,
       },
-    },
-    update: {
-      reps: body.reps,
-      weightKg: body.weightKg,
-      durationSeconds: body.durationSeconds,
-      completed: body.completed,
-      rpe: body.rpe,
-    },
-    create: {
-      sessionExerciseId: exId,
-      setNumber: body.setNumber,
-      reps: body.reps,
-      weightKg: body.weightKg,
-      durationSeconds: body.durationSeconds,
-      completed: body.completed ?? false,
-      rpe: body.rpe,
-    },
-  });
+    });
 
-  return NextResponse.json(workoutSet);
+    return NextResponse.json(workoutSet);
+  } catch (e) {
+    console.error("[sessions/[id]/exercises/[exId]/sets PATCH] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export const PATCH = withAuth(updateSet);

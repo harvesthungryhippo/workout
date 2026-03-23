@@ -11,26 +11,36 @@ const updateSchema = z.object({
 });
 
 async function updateReminder(req: AuthedRequest, ctx: Params) {
-  const { id } = await ctx.params;
-  const reminder = await prisma.workoutReminder.findUnique({ where: { id } });
-  if (!reminder || reminder.userId !== req.session.userId)
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
+  try {
+    const { id } = await ctx.params;
+    const reminder = await prisma.workoutReminder.findUnique({ where: { id } });
+    if (!reminder || reminder.userId !== req.session.userId)
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  let body: z.infer<typeof updateSchema>;
-  try { body = updateSchema.parse(await req.json()); }
-  catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+    let body: z.infer<typeof updateSchema>;
+    try { body = updateSchema.parse(await req.json()); }
+    catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
 
-  const updated = await prisma.workoutReminder.update({ where: { id }, data: body });
-  return NextResponse.json(updated);
+    const updated = await prisma.workoutReminder.update({ where: { id }, data: body });
+    return NextResponse.json(updated);
+  } catch (e) {
+    console.error("[reminders/[id] PATCH] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 async function deleteReminder(req: AuthedRequest, ctx: Params) {
-  const { id } = await ctx.params;
-  const reminder = await prisma.workoutReminder.findUnique({ where: { id } });
-  if (!reminder || reminder.userId !== req.session.userId)
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
-  await prisma.workoutReminder.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  try {
+    const { id } = await ctx.params;
+    const reminder = await prisma.workoutReminder.findUnique({ where: { id } });
+    if (!reminder || reminder.userId !== req.session.userId)
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    await prisma.workoutReminder.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[reminders/[id] DELETE] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export const PATCH = withAuth(updateReminder);

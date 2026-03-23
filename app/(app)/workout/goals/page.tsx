@@ -77,15 +77,13 @@ export default function GoalsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/workout/goals").then((r) => r.json()),
-      fetch("/api/workout/stats?days=3650").then((r) => r.json()),
-      fetch("/api/workout/exercises").then((r) => r.json()),
+      fetch("/api/workout/goals").then((r) => r.ok ? r.json() : null),
+      fetch("/api/workout/stats?days=3650").then((r) => r.ok ? r.json() : null),
+      fetch("/api/workout/exercises").then((r) => r.ok ? r.json() : null),
     ]).then(([g, s, e]) => {
-      setGoals(g);
-      setPrs(s.prs ?? []);
-      setSessionCount(s.sessionCount ?? 0);
-      setTotalVolume(s.totalVolume ?? 0);
-      setExercises(e.exercises ?? []);
+      if (g) setGoals(g);
+      if (s) { setPrs(s.prs ?? []); setSessionCount(s.sessionCount ?? 0); setTotalVolume(s.totalVolume ?? 0); }
+      if (e) setExercises(e.exercises ?? []);
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
 

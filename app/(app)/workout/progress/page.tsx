@@ -159,8 +159,8 @@ function ExerciseChart({ prs }: { prs: Stats["prs"] }) {
     if (!selectedId) return;
     setLoadingHistory(true);
     fetch(`/api/workout/exercises/${selectedId}/history`)
-      .then((r) => r.json())
-      .then(setHistory)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setHistory(d); })
       .catch(console.error)
       .finally(() => setLoadingHistory(false));
   }, [selectedId]);

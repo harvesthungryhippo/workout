@@ -190,8 +190,8 @@ export default function CardioPage() {
   // ── Load history ────────────────────────────────────────────────────────────
   useEffect(() => {
     fetch("/api/workout/cardio")
-      .then((r) => r.json())
-      .then((d) => setHistory(d.sessions ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setHistory(d.sessions ?? []); })
       .catch(console.error)
       .finally(() => setLoadingHistory(false));
   }, []);

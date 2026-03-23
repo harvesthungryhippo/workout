@@ -4,11 +4,16 @@ import { prisma } from "@/lib/db/prisma";
 import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 async function getReminders(req: AuthedRequest) {
-  const reminders = await prisma.workoutReminder.findMany({
-    where: { userId: req.session.userId },
-    orderBy: [{ dayOfWeek: "asc" }, { time: "asc" }],
-  });
-  return NextResponse.json({ reminders });
+  try {
+    const reminders = await prisma.workoutReminder.findMany({
+      where: { userId: req.session.userId },
+      orderBy: [{ dayOfWeek: "asc" }, { time: "asc" }],
+    });
+    return NextResponse.json({ reminders });
+  } catch (e) {
+    console.error("[reminders GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 const createSchema = z.object({

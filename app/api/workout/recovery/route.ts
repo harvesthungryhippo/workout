@@ -4,15 +4,20 @@ import { prisma } from "@/lib/db/prisma";
 import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 async function getRecovery(req: AuthedRequest) {
-  const { searchParams } = new URL(req.url);
-  const limit = parseInt(searchParams.get("limit") ?? "30");
+  try {
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get("limit") ?? "30");
 
-  const entries = await prisma.recoveryEntry.findMany({
-    where: { userId: req.session.userId },
-    orderBy: { date: "desc" },
-    take: limit,
-  });
-  return NextResponse.json({ entries });
+    const entries = await prisma.recoveryEntry.findMany({
+      where: { userId: req.session.userId },
+      orderBy: { date: "desc" },
+      take: limit,
+    });
+    return NextResponse.json({ entries });
+  } catch (e) {
+    console.error("[recovery GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 const createSchema = z.object({

@@ -4,20 +4,25 @@ import { prisma } from "@/lib/db/prisma";
 import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 async function getWater(req: AuthedRequest) {
-  const { searchParams } = new URL(req.url);
-  const date = searchParams.get("date");
+  try {
+    const { searchParams } = new URL(req.url);
+    const date = searchParams.get("date");
 
-  const where: Record<string, unknown> = { userId: req.session.userId };
-  if (date) {
-    const start = new Date(date);
-    const end = new Date(date);
-    end.setDate(end.getDate() + 1);
-    where.date = { gte: start, lt: end };
+    const where: Record<string, unknown> = { userId: req.session.userId };
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setDate(end.getDate() + 1);
+      where.date = { gte: start, lt: end };
+    }
+
+    const entries = await prisma.waterEntry.findMany({ where, orderBy: { date: "desc" } });
+    const totalMl = entries.reduce((sum, e) => sum + e.amountMl, 0);
+    return NextResponse.json({ entries, totalMl });
+  } catch (e) {
+    console.error("[water GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-
-  const entries = await prisma.waterEntry.findMany({ where, orderBy: { date: "desc" } });
-  const totalMl = entries.reduce((sum, e) => sum + e.amountMl, 0);
-  return NextResponse.json({ entries, totalMl });
 }
 
 const createSchema = z.object({

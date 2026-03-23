@@ -122,8 +122,8 @@ export default function ExercisesPage() {
 
     setLoading(true);
     fetch(`/api/workout/exercises?${params}`)
-      .then((r) => r.json())
-      .then((d) => setExercises(d.exercises ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setExercises(d.exercises ?? []); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [search, muscleFilter, equipFilter]);

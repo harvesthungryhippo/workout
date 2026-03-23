@@ -46,8 +46,8 @@ export default function NewProgramPage() {
 
   useEffect(() => {
     fetch("/api/workout/exercises")
-      .then((r) => r.json())
-      .then((d) => setExercises(d.exercises ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setExercises(d.exercises ?? []); })
       .catch(console.error);
   }, []);
 

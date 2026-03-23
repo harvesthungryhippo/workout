@@ -49,8 +49,8 @@ export default function OneRMPage() {
 
   useEffect(() => {
     fetch("/api/workout/stats?days=3650")
-      .then((r) => r.json())
-      .then((d) => setPrs(d.prs ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setPrs(d.prs ?? []); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

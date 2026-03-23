@@ -52,8 +52,8 @@ export default function ProgramDetailPage() {
 
   useEffect(() => {
     fetch(`/api/workout/programs/${id}`)
-      .then((r) => r.json())
-      .then(setProgram)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setProgram(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);

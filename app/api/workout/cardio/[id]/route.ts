@@ -16,29 +16,39 @@ const updateSchema = z.object({
 });
 
 async function updateSession(req: AuthedRequest, ctx: Params) {
-  const { id } = await ctx.params;
-  const session = await prisma.cardioSession.findFirst({ where: { id, userId: req.session.userId } });
-  if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
-
-  let body: z.infer<typeof updateSchema>;
   try {
-    body = updateSchema.parse(await req.json());
-  } catch (e) {
-    return NextResponse.json({ error: "Invalid request.", details: e }, { status: 400 });
-  }
+    const { id } = await ctx.params;
+    const session = await prisma.cardioSession.findFirst({ where: { id, userId: req.session.userId } });
+    if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  const updated = await prisma.cardioSession.update({ where: { id }, data: body });
-  return NextResponse.json(updated);
+    let body: z.infer<typeof updateSchema>;
+    try {
+      body = updateSchema.parse(await req.json());
+    } catch (e) {
+      return NextResponse.json({ error: "Invalid request.", details: e }, { status: 400 });
+    }
+
+    const updated = await prisma.cardioSession.update({ where: { id }, data: body });
+    return NextResponse.json(updated);
+  } catch (e) {
+    console.error("[cardio/[id] PATCH] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 // DELETE /api/workout/cardio/[id]
 async function deleteSession(req: AuthedRequest, ctx: Params) {
-  const { id } = await ctx.params;
-  const session = await prisma.cardioSession.findFirst({ where: { id, userId: req.session.userId } });
-  if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  try {
+    const { id } = await ctx.params;
+    const session = await prisma.cardioSession.findFirst({ where: { id, userId: req.session.userId } });
+    if (!session) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  await prisma.cardioSession.delete({ where: { id } });
-  return new NextResponse(null, { status: 204 });
+    await prisma.cardioSession.delete({ where: { id } });
+    return new NextResponse(null, { status: 204 });
+  } catch (e) {
+    console.error("[cardio/[id] DELETE] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export const PATCH = withAuth(updateSession);

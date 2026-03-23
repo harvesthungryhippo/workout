@@ -42,8 +42,8 @@ export default function OverloadPage() {
 
   useEffect(() => {
     fetch("/api/workout/exercises")
-      .then((r) => r.json())
-      .then((d) => setExercises(d.exercises ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setExercises(d.exercises ?? []); })
       .catch(console.error)
       .finally(() => setLoadingEx(false));
   }, []);
@@ -52,8 +52,8 @@ export default function OverloadPage() {
     if (!selectedId) { setSuggestion(null); setHistory([]); return; }
     setLoadingSug(true);
     fetch(`/api/workout/overload?exerciseId=${selectedId}`)
-      .then((r) => r.json())
-      .then((d) => { setSuggestion(d.suggestion ?? null); setHistory(d.history ?? []); })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) { setSuggestion(d.suggestion ?? null); setHistory(d.history ?? []); } })
       .catch(console.error)
       .finally(() => setLoadingSug(false));
   }, [selectedId]);

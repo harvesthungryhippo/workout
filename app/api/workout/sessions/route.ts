@@ -5,30 +5,35 @@ import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 // GET /api/workout/sessions — list recent sessions for the user
 async function getSessions(req: AuthedRequest) {
-  const { searchParams } = new URL(req.url);
-  const limit = Math.min(100, parseInt(searchParams.get("limit") ?? "20"));
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+  try {
+    const { searchParams } = new URL(req.url);
+    const limit = Math.min(100, parseInt(searchParams.get("limit") ?? "20"));
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
 
-  const [sessions, total] = await Promise.all([
-    prisma.workoutSession.findMany({
-      where: { userId: req.session.userId },
-      include: {
-        exercises: {
-          include: {
-            exercise: true,
-            sets: { orderBy: { setNumber: "asc" } },
+    const [sessions, total] = await Promise.all([
+      prisma.workoutSession.findMany({
+        where: { userId: req.session.userId },
+        include: {
+          exercises: {
+            include: {
+              exercise: true,
+              sets: { orderBy: { setNumber: "asc" } },
+            },
+            orderBy: { order: "asc" },
           },
-          orderBy: { order: "asc" },
         },
-      },
-      orderBy: { startedAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.workoutSession.count({ where: { userId: req.session.userId } }),
-  ]);
+        orderBy: { startedAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.workoutSession.count({ where: { userId: req.session.userId } }),
+    ]);
 
-  return NextResponse.json({ sessions, total, page, limit });
+    return NextResponse.json({ sessions, total, page, limit });
+  } catch (e) {
+    console.error("[sessions GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 // POST /api/workout/sessions — start a new session

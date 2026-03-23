@@ -38,8 +38,8 @@ export default function RemindersPage() {
       setNotifPerm(Notification.permission);
     }
     fetch("/api/workout/reminders")
-      .then((r) => r.json())
-      .then((d) => setReminders(d.reminders ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setReminders(d.reminders ?? []); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

@@ -5,21 +5,26 @@ import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 
 // GET /api/workout/cardio — list cardio sessions for the user
 async function getSessions(req: AuthedRequest) {
-  const { searchParams } = new URL(req.url);
-  const limit = Math.min(100, parseInt(searchParams.get("limit") ?? "20"));
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+  try {
+    const { searchParams } = new URL(req.url);
+    const limit = Math.min(100, parseInt(searchParams.get("limit") ?? "20"));
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
 
-  const [sessions, total] = await Promise.all([
-    prisma.cardioSession.findMany({
-      where: { userId: req.session.userId },
-      orderBy: { startedAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.cardioSession.count({ where: { userId: req.session.userId } }),
-  ]);
+    const [sessions, total] = await Promise.all([
+      prisma.cardioSession.findMany({
+        where: { userId: req.session.userId },
+        orderBy: { startedAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.cardioSession.count({ where: { userId: req.session.userId } }),
+    ]);
 
-  return NextResponse.json({ sessions, total, page, limit });
+    return NextResponse.json({ sessions, total, page, limit });
+  } catch (e) {
+    console.error("[cardio GET] error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 // POST /api/workout/cardio — save a completed cardio session
