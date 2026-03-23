@@ -231,6 +231,10 @@ export default function LogWorkoutPage() {
   // Overload hints
   const [overloadHints, setOverloadHints] = useState<Record<string, OverloadSuggestion | null>>({});
 
+  // Last-session reference keyed by sessionExercise.id
+  type LastSessionData = { date: string; sets: { setNumber: number; reps: number | null; weightLb: number | null; durationSeconds: number | null }[] } | null;
+  const [lastSessions, setLastSessions] = useState<Record<string, LastSessionData>>({});
+
   // Feature 1: PR state keyed by exerciseId
   const [prs, setPrs] = useState<Record<string, PrRecord>>({});
   // PRs hit during this session (for feature 2 summary)
@@ -381,10 +385,21 @@ export default function LogWorkoutPage() {
     } catch { /* non-critical */ }
   }
 
+  async function fetchLastSession(exerciseId: string, sessionExId: string) {
+    try {
+      const res = await fetch(`/api/workout/exercises/${exerciseId}/last-session`);
+      if (res.ok) {
+        const data = await res.json();
+        setLastSessions((prev) => ({ ...prev, [sessionExId]: data }));
+      }
+    } catch { /* non-critical */ }
+  }
+
   useEffect(() => {
     if (session) {
       for (const ex of session.exercises) {
         fetchOverloadHint(ex.exercise.id, ex.id);
+        fetchLastSession(ex.exercise.id, ex.id);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -566,6 +581,7 @@ export default function LogWorkoutPage() {
       setSetInputs((prev) => ({ ...prev, ...inputs }));
       toast.success(`${ex.name} added.`);
       fetchOverloadHint(ex.id, newEx.id);
+      fetchLastSession(ex.id, newEx.id);
     }
   }
 
@@ -854,6 +870,7 @@ export default function LogWorkoutPage() {
       {session.exercises.map((ex) => {
         const allDone = ex.sets.length > 0 && ex.sets.every((s) => s.completed);
         const hint = overloadHints[ex.id];
+        const lastSession = lastSessions[ex.id] ?? null;
         const supersetClass = ex.supersetGroup != null ? supersetColors[(ex.supersetGroup - 1) % supersetColors.length] : "";
 
         return (
@@ -904,6 +921,26 @@ export default function LogWorkoutPage() {
                   <p className="text-xs text-green-800 dark:text-green-200">
                     Suggestion: <strong>{hint.weightLb} lb × {hint.reps}</strong>
                   </p>
+                </div>
+              )}
+
+              {/* Last session reference */}
+              {lastSession && lastSession.sets.length > 0 && (
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 space-y-0.5">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                    Last time · {new Date(lastSession.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                    {lastSession.sets.map((s) => (
+                      <span key={s.setNumber} className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                        {s.weightLb != null && s.reps != null
+                          ? `${s.weightLb} lb × ${s.reps}`
+                          : s.durationSeconds != null
+                          ? `${Math.round(s.durationSeconds / 60)} min`
+                          : "—"}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
