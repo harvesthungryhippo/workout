@@ -264,7 +264,7 @@ export default function BodyPage() {
                 <YAxis yAxisId="bf" orientation="right" tick={{ fontSize: 10, fill: "#9ca3af" }} domain={["auto", "auto"]} unit="%" />
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
-                  formatter={(v: unknown, name: string) =>
+                  formatter={(v: unknown, name: string | number) =>
                     name === "weight" ? [`${v} lb`, "Weight"] : [`${v}%`, "Body Fat"]
                   }
                 />
