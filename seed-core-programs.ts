@@ -38,6 +38,7 @@ const coreExercises = [
   { name: "Dragon Flag", category: "BODYWEIGHT", muscleGroup: "CORE", equipment: "BODYWEIGHT", instructions: "Lie on bench, grip behind head, raise entire body from neck down and lower slowly. Bruce Lee's signature — intense full-core movement." },
   { name: "L-Sit Hold", category: "BODYWEIGHT", muscleGroup: "CORE", equipment: "BODYWEIGHT", instructions: "Support on parallel bars or floor, raise legs parallel to ground and hold. Advanced hip flexor and core strength." },
   { name: "Copenhagen Plank", category: "BODYWEIGHT", muscleGroup: "CORE", equipment: "BODYWEIGHT", instructions: "Side plank with top foot resting on a bench. Elite adductor and lateral core stability." },
+  { name: "Pike Push-Up", category: "BODYWEIGHT", muscleGroup: "SHOULDERS", equipment: "BODYWEIGHT", instructions: "Start in a downward dog position with hips high. Bend elbows to lower head toward the floor, then press back up. Targets shoulders like an overhead press." },
 ] as const;
 
 async function getExerciseId(name: string): Promise<string> {
