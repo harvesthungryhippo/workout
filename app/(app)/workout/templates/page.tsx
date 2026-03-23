@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, Trash2 } from "lucide-react";
+import { Pencil, Play, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -28,6 +28,9 @@ interface Template {
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,6 +40,29 @@ export default function TemplatesPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  function startRename(t: Template) {
+    setRenamingId(t.id);
+    setRenameValue(t.name);
+    setTimeout(() => renameRef.current?.select(), 0);
+  }
+
+  async function submitRename(id: string) {
+    const name = renameValue.trim();
+    if (!name) { setRenamingId(null); return; }
+    const res = await fetch(`/api/workout/templates/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (res.ok) {
+      setTemplates((prev) => prev.map((t) => t.id === id ? { ...t, name } : t));
+      toast.success("Template renamed.");
+    } else {
+      toast.error("Failed to rename.");
+    }
+    setRenamingId(null);
+  }
 
   async function deleteTemplate(id: string) {
     const res = await fetch(`/api/workout/templates/${id}`, { method: "DELETE" });
@@ -74,14 +100,35 @@ export default function TemplatesPage() {
           {templates.map((t) => (
             <Card key={t.id} className="flex flex-col">
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">{t.name}</CardTitle>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    {renamingId === t.id ? (
+                      <input
+                        ref={renameRef}
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onBlur={() => submitRename(t.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") submitRename(t.id);
+                          if (e.key === "Escape") setRenamingId(null);
+                        }}
+                        className="w-full text-base font-semibold bg-transparent border-b border-gray-400 dark:border-gray-500 outline-none pb-0.5"
+                        autoFocus
+                      />
+                    ) : (
+                      <CardTitle
+                        className="text-base cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center gap-1.5 group"
+                        onClick={() => startRename(t)}
+                      >
+                        {t.name}
+                        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+                      </CardTitle>
+                    )}
                     <CardDescription>{new Date(t.createdAt).toLocaleDateString()}</CardDescription>
                   </div>
                   <button
                     onClick={() => deleteTemplate(t.id)}
-                    className="text-gray-300 hover:text-red-500 transition-colors"
+                    className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
