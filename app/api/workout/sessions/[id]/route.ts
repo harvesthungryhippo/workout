@@ -29,7 +29,7 @@ async function getSession(req: AuthedRequest, ctx: Params) {
 // PATCH /api/workout/sessions/[id] — complete session or add notes
 const patchSchema = z.object({
   name: z.string().nullable().optional(),
-  notes: z.string().optional(),
+  notes: z.string().optional().nullable(),
   durationSeconds: z.number().int().min(0).optional(),
   completedAt: z.string().datetime().optional(),
 });

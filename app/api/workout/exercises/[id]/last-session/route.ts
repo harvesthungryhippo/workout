@@ -25,6 +25,7 @@ async function getLastSession(req: AuthedRequest, ctx: Params) {
 
     return NextResponse.json({
       date: se.session.startedAt.toISOString().slice(0, 10),
+      notes: se.notes,
       sets: se.sets
         .filter((s) => s.completed)
         .map((s) => ({
