@@ -100,6 +100,62 @@ interface OverloadSuggestion {
   note: string;
 }
 
+// ── Feature 1: PR tracking ──────────────────────────────────────────────────
+interface PrRecord {
+  maxWeight: number; // lb
+  maxReps: number;
+}
+
+// ── Feature 2: Session Summary ───────────────────────────────────────────────
+interface SummaryExercise {
+  name: string;
+  setsCompleted: number;
+}
+
+interface SessionSummary {
+  sessionId: string;
+  sessionName: string;
+  durationMinutes: number;
+  totalSets: number;
+  totalVolumeLb: number;
+  exercises: SummaryExercise[];
+  prsHit: string[]; // display strings like "185 lb × 5 reps"
+}
+
+// ── Feature 4: localStorage draft ───────────────────────────────────────────
+const LS_DRAFT_KEY = "workout_session_draft";
+
+interface LsDraft {
+  sessionId: string;
+  savedAt: string;
+  exerciseCount: number;
+}
+
+function saveLsDraft(sessionId: string, exerciseCount: number) {
+  try {
+    const draft: LsDraft = { sessionId, savedAt: new Date().toISOString(), exerciseCount };
+    localStorage.setItem(LS_DRAFT_KEY, JSON.stringify(draft));
+  } catch { /* unavailable */ }
+}
+
+function loadLsDraft(): LsDraft | null {
+  try {
+    const raw = localStorage.getItem(LS_DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function clearLsDraft() {
+  try { localStorage.removeItem(LS_DRAFT_KEY); } catch { /* unavailable */ }
+}
+
+function timeAgo(isoString: string): string {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? "s" : ""} ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  return `${diffHr} hour${diffHr !== 1 ? "s" : ""} ago`;
+}
 
 function muscleLabel(m: string) {
   return m.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -130,6 +186,21 @@ function clearSessionState() {
   } catch { /* storage unavailable */ }
 }
 
+// Muscle group filter options for exercise picker
+const MUSCLE_GROUPS = ["All", "Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Cardio"] as const;
+type MuscleFilter = typeof MUSCLE_GROUPS[number];
+
+const MUSCLE_FILTER_MAP: Record<MuscleFilter, string[]> = {
+  All: [],
+  Chest: ["CHEST", "PECTORALS"],
+  Back: ["BACK", "LATS", "UPPER_BACK", "LOWER_BACK", "TRAPS", "RHOMBOIDS"],
+  Shoulders: ["SHOULDERS", "DELTOIDS", "FRONT_DELTS", "SIDE_DELTS", "REAR_DELTS"],
+  Arms: ["ARMS", "BICEPS", "TRICEPS", "FOREARMS"],
+  Legs: ["LEGS", "QUADS", "HAMSTRINGS", "GLUTES", "CALVES", "HIP_FLEXORS", "ADDUCTORS", "ABDUCTORS"],
+  Core: ["CORE", "ABS", "OBLIQUES", "LOWER_ABS"],
+  Cardio: ["CARDIO", "FULL_BODY"],
+};
+
 export default function LogWorkoutPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -145,6 +216,7 @@ export default function LogWorkoutPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [allExercises, setAllExercises] = useState<{ id: string; name: string; muscleGroup: string; category: string }[]>([]);
   const [exSearch, setExSearch] = useState("");
+  const [muscleFilter, setMuscleFilter] = useState<MuscleFilter>("All");
   const [timerExName, setTimerExName] = useState("");
   const timer = useTimer(useCallback(() => sendRestNotification(timerExName), [timerExName]));
   const [timerLabel, setTimerLabel] = useState("");
@@ -159,6 +231,17 @@ export default function LogWorkoutPage() {
   // Overload hints
   const [overloadHints, setOverloadHints] = useState<Record<string, OverloadSuggestion | null>>({});
 
+  // Feature 1: PR state keyed by exerciseId
+  const [prs, setPrs] = useState<Record<string, PrRecord>>({});
+  // PRs hit during this session (for feature 2 summary)
+  const sessionPrsRef = useRef<string[]>([]);
+
+  // Feature 2: summary overlay
+  const [summary, setSummary] = useState<SessionSummary | null>(null);
+
+  // Feature 4: localStorage draft banner
+  const [lsDraft, setLsDraft] = useState<LsDraft | null>(null);
+
   useEffect(() => { sessionRef.current = session; }, [session]);
   useEffect(() => { requestNotificationPermission(); }, []);
 
@@ -168,6 +251,32 @@ export default function LogWorkoutPage() {
       saveSessionState(session.id, setInputs);
     }
   }, [session?.id, setInputs]);
+
+  // Feature 4: save localStorage draft whenever session changes
+  useEffect(() => {
+    if (session?.id) {
+      saveLsDraft(session.id, session.exercises.length);
+    }
+  }, [session?.id, session?.exercises.length]);
+
+  // Feature 1: fetch all-time PRs on mount
+  useEffect(() => {
+    async function fetchPrs() {
+      try {
+        const res = await fetch("/api/workout/stats?days=3650");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data.prs)) {
+          const map: Record<string, PrRecord> = {};
+          for (const pr of data.prs) {
+            map[pr.exerciseId] = { maxWeight: pr.maxWeight, maxReps: pr.maxReps };
+          }
+          setPrs(map);
+        }
+      } catch { /* non-critical */ }
+    }
+    fetchPrs();
+  }, []);
 
   useEffect(() => {
     const isNewSession = programDayId || programId || templateId || sessionName;
@@ -189,6 +298,20 @@ export default function LogWorkoutPage() {
     }
 
     async function init() {
+      // Feature 4: check localStorage for a draft (cross-tab / browser-close recovery)
+      if (!isNewSession) {
+        const draft = loadLsDraft();
+        if (draft) {
+          const ageMs = Date.now() - new Date(draft.savedAt).getTime();
+          const twentyFourHours = 24 * 60 * 60 * 1000;
+          if (ageMs < twentyFourHours) {
+            setLsDraft(draft);
+          } else {
+            clearLsDraft();
+          }
+        }
+      }
+
       if (!isNewSession) {
         const saved = loadSessionState();
         if (saved) {
@@ -221,6 +344,7 @@ export default function LogWorkoutPage() {
         }
       } else {
         clearSessionState();
+        clearLsDraft();
       }
       await createNewSession();
     }
@@ -292,6 +416,61 @@ export default function LogWorkoutPage() {
     );
 
     if (res.ok) {
+      // Feature 1: PR check
+      if (!cardio) {
+        // input.weight is treated as lb for PR comparison (matches the "Weight (lb)" UI label).
+        // PRs from the stats API are also stored in lb, so the comparison is apples-to-apples.
+        const weightLb = parseFloat(input.weight) || 0;
+        const reps = parseInt(input.reps) || 0;
+        const exerciseId = ex.exercise.id;
+        const pr = prs[exerciseId];
+
+        let isNewPr = false;
+        let prLabel = "";
+
+        if (weightLb > 0) {
+          if (!pr || weightLb > pr.maxWeight || (weightLb === pr.maxWeight && reps > pr.maxReps)) {
+            isNewPr = true;
+            prLabel = `${weightLb} lb × ${reps} reps`;
+          }
+        } else if (reps > 0) {
+          // bodyweight
+          if (!pr || reps > pr.maxReps) {
+            isNewPr = true;
+            prLabel = `${reps} reps (bodyweight)`;
+          }
+        }
+
+        if (isNewPr && prLabel) {
+          toast.success(`🏆 New PR! ${prLabel}`, { duration: 4000 });
+          sessionPrsRef.current = [...sessionPrsRef.current, `${ex.exercise.name}: ${prLabel}`];
+          // Update local PR state
+          setPrs((prev) => ({
+            ...prev,
+            [exerciseId]: {
+              maxWeight: weightLb > 0 ? Math.max(weightLb, prev[exerciseId]?.maxWeight ?? 0) : (prev[exerciseId]?.maxWeight ?? 0),
+              maxReps: Math.max(reps, prev[exerciseId]?.maxReps ?? 0),
+            },
+          }));
+        }
+      } else {
+        // Cardio: check reps-only PR if applicable
+        const reps = parseInt(input.reps) || 0;
+        if (reps > 0) {
+          const exerciseId = ex.exercise.id;
+          const pr = prs[exerciseId];
+          if (!pr || reps > pr.maxReps) {
+            const prLabel = `${reps} reps`;
+            toast.success(`🏆 New PR! ${prLabel}`, { duration: 4000 });
+            sessionPrsRef.current = [...sessionPrsRef.current, `${ex.exercise.name}: ${prLabel}`];
+            setPrs((prev) => ({
+              ...prev,
+              [exerciseId]: { maxWeight: prev[exerciseId]?.maxWeight ?? 0, maxReps: reps },
+            }));
+          }
+        }
+      }
+
       setSession((prev) => {
         if (!prev) return prev;
         return {
@@ -364,6 +543,7 @@ export default function LogWorkoutPage() {
         .then((d) => setAllExercises(d.exercises ?? []));
     }
     setExSearch("");
+    setMuscleFilter("All");
     setShowPicker(true);
   }
 
@@ -410,14 +590,60 @@ export default function LogWorkoutPage() {
   async function finishSession() {
     if (!session) return;
     setCompleting(true);
-    const durationSeconds = Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000);
+    const nowMs = Date.now();
+    const startedMs = new Date(session.startedAt).getTime();
+    const durationSeconds = Math.floor((nowMs - startedMs) / 1000);
+    const durationMinutes = Math.round(durationSeconds / 60);
+
     const res = await fetch(`/api/workout/sessions/${session.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ completedAt: new Date().toISOString(), durationSeconds }),
     });
-    if (res.ok) { clearSessionState(); toast.success("Session complete!"); router.push("/workout"); }
+    if (res.ok) {
+      clearSessionState();
+      clearLsDraft();
+
+      // Feature 2: build summary
+      const KG_TO_LB = 2.20462;
+      let totalSets = 0;
+      let totalVolumeLb = 0;
+      const exerciseSummaries: SummaryExercise[] = [];
+
+      for (const ex of session.exercises) {
+        const completed = ex.sets.filter((s) => s.completed);
+        if (completed.length === 0) continue;
+        totalSets += completed.length;
+        for (const s of completed) {
+          if (s.weightKg && s.reps) {
+            totalVolumeLb += s.reps * Number(s.weightKg) * KG_TO_LB;
+          }
+        }
+        exerciseSummaries.push({ name: ex.exercise.name, setsCompleted: completed.length });
+      }
+
+      setSummary({
+        sessionId: session.id,
+        sessionName: session.name ?? "Workout",
+        durationMinutes,
+        totalSets,
+        totalVolumeLb: Math.round(totalVolumeLb),
+        exercises: exerciseSummaries,
+        prsHit: [...sessionPrsRef.current],
+      });
+    }
     setCompleting(false);
+  }
+
+  function dismissSummary(goToSession?: boolean) {
+    if (summary && goToSession) {
+      router.push(`/workout/sessions/${summary.sessionId}/edit`);
+    } else {
+      router.push("/workout");
+    }
+    setSummary(null);
+    sessionPrsRef.current = [];
+    setSession(null);
   }
 
   async function saveAsTemplate() {
@@ -440,6 +666,42 @@ export default function LogWorkoutPage() {
     setSavingTemplate(false);
   }
 
+  // Feature 4: resume from localStorage draft
+  async function resumeFromDraft() {
+    if (!lsDraft) return;
+    setLsDraft(null);
+    try {
+      const res = await fetch(`/api/workout/sessions/${lsDraft.sessionId}`);
+      if (res.ok) {
+        const s = await res.json();
+        if (s && Array.isArray(s.exercises) && !s.completedAt) {
+          setSession(s);
+          initInputs(s);
+          toast.info("Session resumed.");
+          return;
+        }
+      }
+    } catch { /* fall through */ }
+    toast.error("Could not resume session.");
+    clearLsDraft();
+  }
+
+  function discardDraft() {
+    clearLsDraft();
+    setLsDraft(null);
+  }
+
+  // Feature 3: filtered exercises for picker
+  const filteredExercises = allExercises.filter((ex) => {
+    const nameMatch = ex.name.toLowerCase().includes(exSearch.toLowerCase());
+    if (!nameMatch) return false;
+    if (muscleFilter === "All") return true;
+    const allowed = MUSCLE_FILTER_MAP[muscleFilter];
+    return allowed.some(
+      (mg) => ex.muscleGroup.toUpperCase() === mg || ex.category.toUpperCase() === mg
+    );
+  });
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -449,7 +711,73 @@ export default function LogWorkoutPage() {
     );
   }
 
-  if (!session) return <p className="text-sm text-gray-500">Could not start session.</p>;
+  if (!session && !summary) return <p className="text-sm text-gray-500">Could not start session.</p>;
+
+  // Feature 2: show summary overlay
+  if (summary) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-800 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Workout Complete! 🎉</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{summary.sessionName}</p>
+          </div>
+          <div className="overflow-y-auto flex-1 p-6 space-y-5">
+            {/* Stats grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.durationMinutes}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">minutes</p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.totalSets}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">sets</p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.totalVolumeLb.toLocaleString()}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">lb volume</p>
+              </div>
+            </div>
+
+            {/* PRs hit */}
+            {summary.prsHit.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-950/40 rounded-xl p-4">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-2">🏆 Personal Records</p>
+                <ul className="space-y-1">
+                  {summary.prsHit.map((pr, i) => (
+                    <li key={i} className="text-sm text-amber-700 dark:text-amber-400">{pr}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Exercises */}
+            <div>
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Exercises</p>
+              <ul className="space-y-1">
+                {summary.exercises.map((ex, i) => (
+                  <li key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-800 dark:text-gray-200">{ex.name}</span>
+                    <span className="text-gray-400 dark:text-gray-500">{ex.setsCompleted} set{ex.setsCompleted !== 1 ? "s" : ""}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={() => dismissSummary(false)}>
+              Done
+            </Button>
+            <Button className="flex-1" onClick={() => dismissSummary(true)}>
+              View Session
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
 
   const totalSets = session.exercises.reduce((a, e) => a + e.sets.length, 0);
   const completedSets = session.exercises.reduce((a, e) => a + e.sets.filter((s) => s.completed).length, 0);
@@ -459,6 +787,19 @@ export default function LogWorkoutPage() {
 
   return (
     <div className="space-y-6">
+      {/* Feature 4: localStorage draft resume banner */}
+      {lsDraft && (
+        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            You have an unfinished workout from {timeAgo(lsDraft.savedAt)} ({lsDraft.exerciseCount} exercise{lsDraft.exerciseCount !== 1 ? "s" : ""}). Resume?
+          </p>
+          <div className="flex items-center gap-2 ml-4 shrink-0">
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={discardDraft}>Discard</Button>
+            <Button size="sm" className="h-7 text-xs" onClick={resumeFromDraft}>Resume</Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -667,24 +1008,41 @@ export default function LogWorkoutPage() {
         <Plus className="h-4 w-4" />Add Exercise
       </Button>
 
-      {/* Exercise picker modal */}
+      {/* Exercise picker modal — Feature 3: search + muscle group filter */}
       {showPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[70vh]">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[75vh]">
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">Add Exercise</h2>
               <button onClick={() => setShowPicker(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X className="h-5 w-5" /></button>
             </div>
-            <div className="p-3 border-b">
+            <div className="p-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input placeholder="Search exercises..." value={exSearch} onChange={(e) => setExSearch(e.target.value)} className="pl-9" autoFocus />
               </div>
+              {/* Muscle group pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {MUSCLE_GROUPS.map((mg) => (
+                  <button
+                    key={mg}
+                    onClick={() => setMuscleFilter(mg)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      muscleFilter === mg
+                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {mg}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="overflow-y-auto flex-1 divide-y">
-              {allExercises
-                .filter((ex) => ex.name.toLowerCase().includes(exSearch.toLowerCase()))
-                .map((ex) => (
+            <div className="overflow-y-auto flex-1 divide-y divide-gray-100 dark:divide-gray-800">
+              {filteredExercises.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8">No exercises found.</p>
+              ) : (
+                filteredExercises.map((ex) => (
                   <button
                     key={ex.id}
                     className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-between"
@@ -693,7 +1051,8 @@ export default function LogWorkoutPage() {
                     <span className="text-sm font-medium text-gray-900 dark:text-white">{ex.name}</span>
                     <span className="text-xs text-gray-400 dark:text-gray-500">{ex.muscleGroup.replace(/_/g, " ")}</span>
                   </button>
-                ))}
+                ))
+              )}
             </div>
           </div>
         </div>

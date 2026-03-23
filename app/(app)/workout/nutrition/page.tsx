@@ -6,8 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
+
+const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 65 };
+
+function MacroBar({ label, value, goal, color }: { label: string; value: number; goal: number; color: string }) {
+  const pct = Math.min(100, goal > 0 ? Math.round((value / goal) * 100) : 0);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="text-gray-500 dark:text-gray-400">{label}</span>
+        <span className="font-medium text-gray-700 dark:text-gray-300">{Math.round(value)} / {goal}</span>
+      </div>
+      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <p className="text-xs text-gray-400 text-right">{pct}%</p>
+    </div>
+  );
+}
 
 interface NutritionEntry {
   id: string;
@@ -42,6 +60,17 @@ export default function NutritionPage() {
   const [fat, setFat] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [goals, setGoals] = useState(DEFAULT_GOALS);
+  const [editingGoals, setEditingGoals] = useState(false);
+  const [goalDraft, setGoalDraft] = useState(DEFAULT_GOALS);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("nutrition_goals");
+    if (saved) {
+      try { setGoals(JSON.parse(saved)); } catch { /* ignore */ }
+    }
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -109,6 +138,13 @@ export default function NutritionPage() {
 
   const isToday = date === toDateString(new Date());
 
+  function saveGoals() {
+    localStorage.setItem("nutrition_goals", JSON.stringify(goalDraft));
+    setGoals(goalDraft);
+    setEditingGoals(false);
+    toast.success("Goals saved.");
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -144,23 +180,56 @@ export default function NutritionPage() {
         )}
       </div>
 
-      {/* Totals */}
-      {!loading && entries.length > 0 && (
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { label: "Calories", value: `${Math.round(totals.calories)} kcal` },
-            { label: "Protein", value: `${totals.protein.toFixed(1)}g` },
-            { label: "Carbs", value: `${totals.carbs.toFixed(1)}g` },
-            { label: "Fat", value: `${totals.fat.toFixed(1)}g` },
-          ].map(({ label, value }) => (
-            <Card key={label}>
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {/* Daily Goals Card */}
+      {!loading && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-gray-400" />
+                <CardTitle className="text-sm font-medium">Daily Targets</CardTitle>
+              </div>
+              {!editingGoals ? (
+                <button
+                  onClick={() => { setGoalDraft(goals); setEditingGoals(true); }}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Pencil className="h-3 w-3" /> Edit goals
+                </button>
+              ) : (
+                <button onClick={saveGoals} className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium">
+                  <Check className="h-3 w-3" /> Save
+                </button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {editingGoals ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {(["calories", "protein", "carbs", "fat"] as const).map((k) => (
+                  <div key={k} className="space-y-1">
+                    <Label className="capitalize text-xs">{k}{k === "calories" ? " (kcal)" : " (g)"}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={goalDraft[k]}
+                      onChange={(e) => setGoalDraft((prev) => ({ ...prev, [k]: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <MacroBar label={`Calories (kcal) — ${Math.round(totals.calories)} today`} value={totals.calories} goal={goals.calories} color="bg-blue-500" />
+                <div className="grid grid-cols-3 gap-4">
+                  <MacroBar label="Protein (g)" value={totals.protein} goal={goals.protein} color="bg-emerald-500" />
+                  <MacroBar label="Carbs (g)" value={totals.carbs} goal={goals.carbs} color="bg-amber-500" />
+                  <MacroBar label="Fat (g)" value={totals.fat} goal={goals.fat} color="bg-rose-500" />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Add form */}

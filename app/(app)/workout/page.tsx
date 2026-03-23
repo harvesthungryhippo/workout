@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target } from "lucide-react";
+import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 interface Stats {
@@ -236,25 +236,41 @@ export default function WorkoutPage() {
         </Card>
       </div>
 
-      {/* Active Program */}
-      {!loading && activeProgram && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base">{activeProgram.name}</CardTitle>
-              <CardDescription>Active program · {activeProgram.daysPerWeek} days/week</CardDescription>
+      {/* Onboarding — shown only when user has no sessions yet */}
+      {!loading && (stats?.sessionCount ?? 0) === 0 && (
+        <Card className="border-dashed bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+          <CardContent className="py-10 flex flex-col items-center text-center gap-4">
+            <div className="p-3 rounded-full bg-gray-100 dark:bg-gray-800">
+              <Sparkles className="h-7 w-7 text-gray-600 dark:text-gray-300" />
             </div>
-            <Link href={`/workout/programs/${activeProgram.id}`}>
-              <Button variant="outline" size="sm">View program</Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {activeProgram.days.map((day) => (
-                <Link key={day.id} href={`/workout/log?programDayId=${day.id}&programId=${activeProgram.id}`}>
-                  <Badge variant="secondary" className="cursor-pointer hover:bg-gray-200 transition-colors px-3 py-1.5">
-                    Day {day.dayNumber}: {day.name}
-                  </Badge>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Welcome! Let&apos;s get started</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm">
+                Log your first session, follow a structured program, or explore the app.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link href="/workout/log">
+                <Button className="gap-2">
+                  <Play className="h-4 w-4" />
+                  Log first workout
+                </Button>
+              </Link>
+              <Link href="/workout/core-programs">
+                <Button variant="outline" className="gap-2">
+                  <Dumbbell className="h-4 w-4" />
+                  Browse programs
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-3 gap-4 w-full max-w-sm mt-2 text-center">
+              {[
+                { href: "/workout/exercises", label: "Exercise library" },
+                { href: "/workout/body", label: "Body tracking" },
+                { href: "/workout/nutrition", label: "Nutrition log" },
+              ].map(({ href, label }) => (
+                <Link key={href} href={href} className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  {label}
                 </Link>
               ))}
             </div>
@@ -262,8 +278,58 @@ export default function WorkoutPage() {
         </Card>
       )}
 
+      {/* Active Program */}
+      {!loading && activeProgram && (() => {
+        // Find days completed this week by matching session names to program day names
+        const now = new Date();
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay()); // Sunday
+        weekStart.setHours(0, 0, 0, 0);
+        const completedDayNames = new Set(
+          (stats?.recentSessions ?? [])
+            .filter((s) => new Date(s.startedAt) >= weekStart)
+            .map((s) => s.name?.toLowerCase().trim())
+            .filter(Boolean)
+        );
+        return (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">{activeProgram.name}</CardTitle>
+                <CardDescription>Active program · {activeProgram.daysPerWeek} days/week</CardDescription>
+              </div>
+              <Link href={`/workout/programs/${activeProgram.id}`}>
+                <Button variant="outline" size="sm">View program</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">This week</p>
+              <div className="flex flex-wrap gap-2">
+                {activeProgram.days.map((day) => {
+                  const done = completedDayNames.has(day.name.toLowerCase().trim());
+                  return (
+                    <Link key={day.id} href={`/workout/log?programDayId=${day.id}&programId=${activeProgram.id}`}>
+                      <Badge
+                        variant={done ? "default" : "secondary"}
+                        className={`cursor-pointer px-3 py-1.5 gap-1.5 transition-colors ${done ? "bg-green-600 hover:bg-green-700 text-white" : "hover:bg-gray-200 dark:hover:bg-gray-700"}`}
+                      >
+                        {done
+                          ? <CheckCircle2 className="h-3 w-3" />
+                          : <Circle className="h-3 w-3 opacity-50" />
+                        }
+                        Day {day.dayNumber}: {day.name}
+                      </Badge>
+                    </Link>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* No program CTA */}
-      {!loading && !activeProgram && (
+      {!loading && !activeProgram && (stats?.sessionCount ?? 0) > 0 && (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-10 gap-3">
             <Dumbbell className="h-8 w-8 text-gray-300" />
@@ -271,7 +337,7 @@ export default function WorkoutPage() {
             <Link href="/workout/programs">
               <Button variant="outline" size="sm" className="gap-2">
                 <Plus className="h-4 w-4" />
-                Create Program
+                Browse Programs
               </Button>
             </Link>
           </CardContent>
