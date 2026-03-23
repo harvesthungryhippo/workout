@@ -311,8 +311,8 @@ export default function ProgressPage() {
   useEffect(() => {
     setLoading(true);
     fetch(`/api/workout/stats?days=${days}`)
-      .then((r) => r.json())
-      .then(setStats)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.sessionCount !== undefined) setStats(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [days]);
@@ -425,7 +425,7 @@ export default function ProgressPage() {
           <CardContent>
             {loading ? (
               <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
-            ) : stats?.prs.length === 0 ? (
+            ) : stats?.prs?.length === 0 ? (
               <p className="text-sm text-gray-400 py-4 text-center">No PRs yet. Log some workouts!</p>
             ) : (
               <div className="divide-y">
@@ -451,7 +451,7 @@ export default function ProgressPage() {
           <CardContent>
             {loading ? (
               <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : stats?.recentSessions.length === 0 ? (
+            ) : stats?.recentSessions?.length === 0 ? (
               <p className="text-sm text-gray-400 py-4 text-center">No sessions in this period.</p>
             ) : (
               <div className="divide-y">
