@@ -475,6 +475,7 @@ export default function ProgressPage() {
             ) : stats?.prs?.length === 0 ? (
               <p className="text-sm text-gray-400 py-4 text-center">No PRs yet. Log some workouts!</p>
             ) : (
+              <>
               <div className="divide-y">
                 {(stats?.prs ?? []).slice(0, 10).map((pr) => (
                   <button
@@ -494,6 +495,7 @@ export default function ProgressPage() {
                 ))}
               </div>
               <p className="text-xs text-gray-400 mt-2">Click any exercise to view its progress chart</p>
+              </>
             )}
           </CardContent>
         </Card>
