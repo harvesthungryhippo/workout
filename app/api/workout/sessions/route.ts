@@ -11,6 +11,7 @@ async function getSessions(req: AuthedRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    const summary = searchParams.get("summary") === "true";
 
     const dateFilter = from || to ? {
       startedAt: {
@@ -20,6 +21,50 @@ async function getSessions(req: AuthedRequest) {
     } : {};
 
     const where = { userId: req.session.userId, ...dateFilter };
+
+    if (summary) {
+      // Lightweight mode for calendar: no sets, just exercise count + volume via aggregation
+      const [rows, total] = await Promise.all([
+        prisma.workoutSession.findMany({
+          where,
+          select: {
+            id: true,
+            name: true,
+            startedAt: true,
+            completedAt: true,
+            durationSeconds: true,
+            _count: { select: { exercises: true } },
+            exercises: {
+              select: {
+                sets: {
+                  where: { completed: true },
+                  select: { weightKg: true, reps: true },
+                },
+              },
+            },
+          },
+          orderBy: { startedAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.workoutSession.count({ where }),
+      ]);
+
+      const KG_TO_LB = 2.20462;
+      const sessions = rows.map((s) => ({
+        id: s.id,
+        name: s.name,
+        startedAt: s.startedAt,
+        completedAt: s.completedAt,
+        durationSeconds: s.durationSeconds,
+        exerciseCount: s._count.exercises,
+        volume: s.exercises.reduce((acc, ex) =>
+          acc + ex.sets.reduce((a, set) =>
+            a + (Number(set.weightKg ?? 0) * (set.reps ?? 0) * KG_TO_LB), 0), 0),
+      }));
+
+      return NextResponse.json({ sessions, total, page, limit });
+    }
 
     const [sessions, total] = await Promise.all([
       prisma.workoutSession.findMany({

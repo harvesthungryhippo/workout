@@ -54,7 +54,7 @@ export default function CalendarPage() {
     setLoading(true);
     const from = new Date(y, m, 1).toISOString();
     const to = new Date(y, m + 1, 0, 23, 59, 59).toISOString();
-    fetch(`/api/workout/sessions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=200`)
+    fetch(`/api/workout/sessions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=200&summary=true`)
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (d?.sessions) {
