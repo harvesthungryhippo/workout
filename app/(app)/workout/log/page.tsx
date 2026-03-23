@@ -89,6 +89,7 @@ function isCardio(ex: SessionExercise) {
 interface Session {
   id: string;
   name: string | null;
+  notes: string | null;
   startedAt: string;
   completedAt: string | null;
   exercises: SessionExercise[];
@@ -229,11 +230,15 @@ export default function LogWorkoutPage() {
   const [editingNotes, setEditingNotes] = useState<Record<string, boolean>>({});
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
 
+  // Session-level notes
+  const [sessionNotes, setSessionNotes] = useState("");
+  const [editingSessionNotes, setEditingSessionNotes] = useState(false);
+
   // Overload hints
   const [overloadHints, setOverloadHints] = useState<Record<string, OverloadSuggestion | null>>({});
 
   // Last-session reference keyed by sessionExercise.id
-  type LastSessionData = { date: string; sets: { setNumber: number; reps: number | null; weightLb: number | null; durationSeconds: number | null }[] } | null;
+  type LastSessionData = { date: string; notes: string | null; sets: { setNumber: number; reps: number | null; weightLb: number | null; durationSeconds: number | null }[] } | null;
   const [lastSessions, setLastSessions] = useState<Record<string, LastSessionData>>({});
 
   // Feature 1: PR state keyed by exerciseId
@@ -249,6 +254,10 @@ export default function LogWorkoutPage() {
 
   useEffect(() => { sessionRef.current = session; }, [session]);
   useEffect(() => { requestNotificationPermission(); }, []);
+
+  useEffect(() => {
+    setSessionNotes(session?.notes ?? "");
+  }, [session?.id]);
 
   // Persist active session ID + unsaved inputs so navigating away and back resumes the session
   useEffect(() => {
@@ -502,7 +511,8 @@ export default function LogWorkoutPage() {
         };
       });
       if (!cardio && timerEnabled) {
-        const restSec = ex.restSeconds ?? 90;
+        const savedDefault = typeof window !== "undefined" ? parseInt(localStorage.getItem("default_rest_seconds") ?? "90") : 90;
+        const restSec = ex.restSeconds ?? (isNaN(savedDefault) ? 90 : savedDefault);
         timer.start(restSec);
         setTimerExName(ex.exercise.name);
         setTimerLabel(`Rest: ${ex.exercise.name}`);
@@ -526,6 +536,15 @@ export default function LogWorkoutPage() {
       setEditingNotes((prev) => ({ ...prev, [ex.id]: false }));
       toast.success("Notes saved.");
     }
+  }
+
+  async function saveSessionNotes(notes: string) {
+    if (!session) return;
+    await fetch(`/api/workout/sessions/${session.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes }),
+    });
   }
 
   async function setSupersetGroup(ex: SessionExercise, group: number | null) {
@@ -825,6 +844,27 @@ export default function LogWorkoutPage() {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{session.name ?? "Workout"}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{completedSets}/{totalSets} sets completed</p>
+          <div className="mt-1.5">
+            {editingSessionNotes ? (
+              <input
+                autoFocus
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-64 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                value={sessionNotes}
+                onChange={(e) => setSessionNotes(e.target.value)}
+                placeholder="Session notes..."
+                onBlur={() => { setEditingSessionNotes(false); saveSessionNotes(sessionNotes); }}
+                onKeyDown={(e) => { if (e.key === "Enter") { setEditingSessionNotes(false); saveSessionNotes(sessionNotes); } }}
+              />
+            ) : (
+              <button
+                onClick={() => setEditingSessionNotes(true)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <Pencil className="h-3 w-3" />
+                {sessionNotes ? sessionNotes : "Add session note"}
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -955,6 +995,9 @@ export default function LogWorkoutPage() {
                       </span>
                     ))}
                   </div>
+                  {lastSession.notes && (
+                    <p className="text-xs text-gray-400 italic mt-0.5">Last note: {lastSession.notes}</p>
+                  )}
                 </div>
               )}
 

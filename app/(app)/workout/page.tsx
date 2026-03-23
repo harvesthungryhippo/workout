@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles, Pencil } from "lucide-react";
+import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles, Pencil, Droplets, Moon } from "lucide-react";
 import Link from "next/link";
 
 function GoalRing({ done, goal }: { done: number; goal: number }) {
@@ -93,6 +93,134 @@ function formatDuration(seconds: number | null) {
 function formatVolume(lb: number) {
   if (lb >= 1000) return `${(lb / 1000).toFixed(1)}k lb`;
   return `${lb} lb`;
+}
+
+function QuickWater() {
+  const [totalMl, setTotalMl] = useState<number | null>(null);
+  const GOAL_ML = 2700;
+  const today = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    fetch(`/api/workout/water?date=${today}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setTotalMl(d.totalMl ?? 0); })
+      .catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function log(ml: number) {
+    const res = await fetch("/api/workout/water", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amountMl: ml, date: new Date().toISOString() }),
+    });
+    if (res.ok) setTotalMl((prev) => (prev ?? 0) + ml);
+  }
+
+  const oz = totalMl !== null ? Math.round(totalMl / 29.574) : null;
+  const pct = totalMl !== null ? Math.min(100, Math.round((totalMl / GOAL_ML) * 100)) : 0;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+            <Droplets className="h-3.5 w-3.5 text-blue-400" /> Water
+          </CardTitle>
+          <Link href="/workout/water" className="text-xs text-gray-400 hover:text-gray-600">View →</Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <p className="text-xl font-bold">{oz !== null ? `${oz} oz` : "—"}</p>
+        <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-full bg-blue-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex gap-1.5">
+          {[{ label: "8 oz", ml: 237 }, { label: "16 oz", ml: 473 }].map(({ label, ml }) => (
+            <button
+              key={label}
+              onClick={() => log(ml)}
+              className="flex-1 rounded-md border border-gray-200 dark:border-gray-700 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              +{label}
+            </button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickSleep() {
+  const [last, setLast] = useState<{ durationMins: number } | null | undefined>(undefined);
+  const [logging, setLogging] = useState(false);
+  const [hours, setHours] = useState("");
+
+  useEffect(() => {
+    fetch("/api/workout/sleep?limit=1")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setLast(d?.entries?.[0] ?? null))
+      .catch(() => setLast(null));
+  }, []);
+
+  async function logSleep() {
+    const h = parseFloat(hours);
+    if (!h || h <= 0) return;
+    const res = await fetch("/api/workout/sleep", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ durationMins: Math.round(h * 60), date: new Date().toISOString() }),
+    });
+    if (res.ok) {
+      const entry = await res.json();
+      setLast(entry);
+      setHours("");
+      setLogging(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+            <Moon className="h-3.5 w-3.5 text-indigo-400" /> Sleep
+          </CardTitle>
+          <Link href="/workout/sleep" className="text-xs text-gray-400 hover:text-gray-600">View →</Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <p className="text-xl font-bold">
+          {last === undefined ? "—" : last ? `${(last.durationMins / 60).toFixed(1)}h` : "—"}
+        </p>
+        <p className="text-xs text-gray-400">Last night</p>
+        {!logging ? (
+          <button
+            onClick={() => setLogging(true)}
+            className="w-full rounded-md border border-gray-200 dark:border-gray-700 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            + Log sleep
+          </button>
+        ) : (
+          <div className="flex gap-1.5">
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              max="24"
+              placeholder="hrs"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              className="flex-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-xs text-gray-900 dark:text-white outline-none"
+              autoFocus
+            />
+            <button onClick={logSleep} className="rounded-md bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-2 py-1 text-xs font-medium">Save</button>
+            <button onClick={() => setLogging(false)} className="text-xs text-gray-400 px-1">✕</button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function WorkoutPage() {
@@ -406,6 +534,12 @@ export default function WorkoutPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Quick-log row: Water & Sleep */}
+      <div className="grid grid-cols-2 gap-4">
+        <QuickWater />
+        <QuickSleep />
+      </div>
     </div>
   );
 }

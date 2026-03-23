@@ -31,6 +31,13 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
+  const [defaultRest, setDefaultRest] = useState(90);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("default_rest_seconds");
+    if (saved) setDefaultRest(parseInt(saved));
+  }, []);
+
   useEffect(() => {
     fetch("/api/auth/profile")
       .then((r) => r.json())
@@ -117,6 +124,31 @@ export default function SettingsPage() {
             >
               Español
             </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Preferences</CardTitle>
+          <CardDescription>App behaviour defaults.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Default rest timer</Label>
+            <div className="flex gap-2 flex-wrap">
+              {[60, 90, 120, 180].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => { setDefaultRest(s); localStorage.setItem("default_rest_seconds", String(s)); }}
+                  className={`px-4 py-1.5 rounded-lg border text-sm font-medium transition-colors ${defaultRest === s ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white" : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}
+                >
+                  {s < 60 ? `${s}s` : `${s / 60} min`}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400">Rest timer starts automatically after completing a set.</p>
           </div>
         </CardContent>
       </Card>

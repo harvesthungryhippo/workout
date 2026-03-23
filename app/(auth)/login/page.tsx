@@ -34,14 +34,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl border shadow-sm p-8 space-y-6">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Workout</h1>
-        <p className="text-sm text-gray-500 mt-1">{t.auth.signInTitle}</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t.auth.signInTitle}</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-700">{t.auth.email}</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.auth.email}</label>
           <input
             type="email"
             value={email}
@@ -53,7 +53,7 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-700">{t.auth.password}</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.auth.password}</label>
           <input
             type="password"
             value={password}
@@ -71,9 +71,9 @@ export default function LoginPage() {
           {loading ? t.auth.signingIn : t.auth.signIn}
         </button>
       </form>
-      <p className="text-sm text-center text-gray-500">
+      <p className="text-sm text-center text-gray-500 dark:text-gray-400">
         {t.auth.noAccount}{" "}
-        <Link href="/register" className="text-gray-900 font-medium hover:underline">{t.auth.signUp}</Link>
+        <Link href="/register" className="text-gray-900 dark:text-white font-medium hover:underline">{t.auth.signUp}</Link>
       </p>
     </div>
   );

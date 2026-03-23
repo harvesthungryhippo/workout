@@ -55,6 +55,13 @@ function SparkLine({ values, color = "stroke-blue-500" }: { values: number[]; co
   );
 }
 
+function bmiCategory(bmi: number) {
+  if (bmi < 18.5) return { label: "Underweight", color: "text-blue-500" };
+  if (bmi < 25)   return { label: "Normal",      color: "text-green-600" };
+  if (bmi < 30)   return { label: "Overweight",  color: "text-amber-500" };
+  return              { label: "Obese",        color: "text-red-500" };
+}
+
 export default function BodyPage() {
   const [entries, setEntries] = useState<BodyEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +69,13 @@ export default function BodyPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [heightIn, setHeightIn] = useState<string>("");
+  const [editingHeight, setEditingHeight] = useState(false);
+
+  useEffect(() => {
+    const h = localStorage.getItem("body_height_in");
+    if (h) setHeightIn(h);
+  }, []);
 
   useEffect(() => {
     fetch("/api/workout/body")
@@ -200,7 +214,7 @@ export default function BodyPage() {
 
       {/* Summary cards */}
       {!loading && entries.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">Weight</CardTitle></CardHeader>
             <CardContent>
@@ -232,6 +246,45 @@ export default function BodyPage() {
             <CardContent>
               <div className="text-2xl font-bold">{latest?.waistIn ? `${parseFloat(latest.waistIn)}"` : "—"}</div>
               <p className="text-xs text-gray-400 mt-1">{entries.length} entries total</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">BMI</CardTitle></CardHeader>
+            <CardContent>
+              {latest?.weightLbs && heightIn ? (() => {
+                const bmi = (parseFloat(latest.weightLbs!) / (parseFloat(heightIn) ** 2)) * 703;
+                const cat = bmiCategory(bmi);
+                return (
+                  <>
+                    <div className="text-2xl font-bold">{bmi.toFixed(1)}</div>
+                    <p className={`text-xs mt-1 font-medium ${cat.color}`}>{cat.label}</p>
+                  </>
+                );
+              })() : (
+                <>
+                  <div className="text-2xl font-bold">—</div>
+                  {!editingHeight ? (
+                    <button className="text-xs text-indigo-500 hover:underline mt-1" onClick={() => setEditingHeight(true)}>
+                      Set height
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1 mt-1">
+                      <input
+                        type="number"
+                        placeholder="in"
+                        className="w-14 text-xs border rounded px-1.5 py-1 text-gray-900 dark:text-white dark:bg-gray-800 outline-none"
+                        value={heightIn}
+                        onChange={(e) => setHeightIn(e.target.value)}
+                        autoFocus
+                      />
+                      <button
+                        className="text-xs text-green-600 font-medium"
+                        onClick={() => { localStorage.setItem("body_height_in", heightIn); setEditingHeight(false); }}
+                      >Save</button>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
