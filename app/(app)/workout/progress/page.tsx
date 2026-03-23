@@ -390,7 +390,7 @@ export default function ProgressPage() {
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">PRs Tracked</CardTitle></CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats?.prs.length ?? 0}</div>
+                <div className="text-2xl font-bold">{stats?.prs?.length ?? 0}</div>
                 <p className="text-xs text-gray-500 mt-1">Exercises with history</p>
               </CardContent>
             </Card>
@@ -429,7 +429,7 @@ export default function ProgressPage() {
               <p className="text-sm text-gray-400 py-4 text-center">No PRs yet. Log some workouts!</p>
             ) : (
               <div className="divide-y">
-                {stats?.prs.slice(0, 10).map((pr) => (
+                {(stats?.prs ?? []).slice(0, 10).map((pr) => (
                   <div key={pr.exerciseName} className="flex items-center justify-between py-2.5">
                     <span className="text-sm">{pr.exerciseName}</span>
                     <div>
@@ -455,7 +455,7 @@ export default function ProgressPage() {
               <p className="text-sm text-gray-400 py-4 text-center">No sessions in this period.</p>
             ) : (
               <div className="divide-y">
-                {stats?.recentSessions.map((s) => (
+                {(stats?.recentSessions ?? []).map((s) => (
                   <div key={s.id} className="flex items-center justify-between py-3 group">
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{s.name ?? "Workout"}</p>

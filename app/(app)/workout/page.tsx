@@ -78,12 +78,12 @@ export default function WorkoutPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/workout/stats?days=30").then((r) => r.json()),
-      fetch("/api/workout/programs").then((r) => r.json()),
+      fetch("/api/workout/stats?days=30").then((r) => r.ok ? r.json() : null),
+      fetch("/api/workout/programs").then((r) => r.ok ? r.json() : null),
     ])
       .then(([s, p]) => {
-        setStats(s);
-        const active = p.programs?.find((prog: ActiveProgram & { active: boolean }) => prog.active) ?? null;
+        if (s?.sessionCount !== undefined) setStats(s);
+        const active = p?.programs?.find((prog: ActiveProgram & { active: boolean }) => prog.active) ?? null;
         setActiveProgram(active);
       })
       .catch(console.error)
@@ -196,14 +196,14 @@ export default function WorkoutPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Sessions</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Last week: {stats?.weekly.lastSessions ?? 0}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Last week: {stats?.weekly?.lastSessions ?? 0}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">{stats?.weekly.thisSessions ?? 0}</p>
-                    {(stats?.weekly.lastSessions ?? 0) > 0 && (
-                      <p className={`text-xs font-medium ${(stats?.weekly.thisSessions ?? 0) >= (stats?.weekly.lastSessions ?? 0) ? "text-green-600" : "text-red-500"}`}>
-                        {(stats?.weekly.thisSessions ?? 0) >= (stats?.weekly.lastSessions ?? 0) ? "+" : ""}
-                        {(stats?.weekly.thisSessions ?? 0) - (stats?.weekly.lastSessions ?? 0)} vs last
+                    <p className="text-2xl font-bold">{stats?.weekly?.thisSessions ?? 0}</p>
+                    {(stats?.weekly?.lastSessions ?? 0) > 0 && (
+                      <p className={`text-xs font-medium ${(stats?.weekly?.thisSessions ?? 0) >= (stats?.weekly?.lastSessions ?? 0) ? "text-green-600" : "text-red-500"}`}>
+                        {(stats?.weekly?.thisSessions ?? 0) >= (stats?.weekly?.lastSessions ?? 0) ? "+" : ""}
+                        {(stats?.weekly?.thisSessions ?? 0) - (stats?.weekly?.lastSessions ?? 0)} vs last
                       </p>
                     )}
                   </div>
@@ -211,14 +211,14 @@ export default function WorkoutPage() {
                 <div className="flex items-center justify-between border-t pt-4">
                   <div>
                     <p className="text-sm font-medium">Volume</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Last week: {formatVolume(stats?.weekly.lastVolume ?? 0)}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Last week: {formatVolume(stats?.weekly?.lastVolume ?? 0)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold">{formatVolume(stats?.weekly.thisVolume ?? 0)}</p>
-                    {(stats?.weekly.lastVolume ?? 0) > 0 && (
-                      <p className={`text-xs font-medium ${(stats?.weekly.thisVolume ?? 0) >= (stats?.weekly.lastVolume ?? 0) ? "text-green-600" : "text-red-500"}`}>
-                        {(stats?.weekly.thisVolume ?? 0) >= (stats?.weekly.lastVolume ?? 0) ? "+" : ""}
-                        {Math.round(((stats?.weekly.thisVolume ?? 0) - (stats?.weekly.lastVolume ?? 0)) / Math.max(stats?.weekly.lastVolume ?? 1, 1) * 100)}% vs last
+                    <p className="text-lg font-bold">{formatVolume(stats?.weekly?.thisVolume ?? 0)}</p>
+                    {(stats?.weekly?.lastVolume ?? 0) > 0 && (
+                      <p className={`text-xs font-medium ${(stats?.weekly?.thisVolume ?? 0) >= (stats?.weekly?.lastVolume ?? 0) ? "text-green-600" : "text-red-500"}`}>
+                        {(stats?.weekly?.thisVolume ?? 0) >= (stats?.weekly?.lastVolume ?? 0) ? "+" : ""}
+                        {Math.round(((stats?.weekly?.thisVolume ?? 0) - (stats?.weekly?.lastVolume ?? 0)) / Math.max(stats?.weekly?.lastVolume ?? 1, 1) * 100)}% vs last
                       </p>
                     )}
                   </div>
