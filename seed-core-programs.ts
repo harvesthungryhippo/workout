@@ -1045,6 +1045,173 @@ async function main() {
     ],
   });
 
+  // =========================================================================
+  // 16. 10-MINUTE DAILY ABS — Quick Daily Routine
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "10-Minute Daily Abs",
+    description:
+      "A short, intense ab circuit designed to be done every day — before bed, after training, or as a standalone session. " +
+      "Each day targets a different area so you can train abs daily without overtraining. " +
+      "No equipment needed. Each circuit takes 10–12 minutes. " +
+      "LEVEL: Beginner — the perfect starting point or daily add-on to any program.",
+    daysPerWeek: 5,
+    durationWeeks: 4,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Day 1 — Upper Abs (10 min)",
+        exercises: [
+          { name: "Crunch", sets: 3, reps: "20", rest: 30, notes: "Slow and controlled — 2 seconds up, 2 seconds down. No momentum." },
+          { name: "Toe Touch", sets: 3, reps: "15", rest: 30 },
+          { name: "Stability Ball Crunch", sets: 3, reps: "15", rest: 30, notes: "Or substitute with crunches on the floor if no ball" },
+          { name: "Plank", sets: 2, reps: "30s", rest: 20 },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Day 2 — Lower Abs (10 min)",
+        exercises: [
+          { name: "Leg Raise (Floor)", sets: 3, reps: "15", rest: 30, notes: "Keep lower back pressed into the floor the entire time" },
+          { name: "Hollow Body Hold", sets: 3, reps: "20s", rest: 30 },
+          { name: "V-Up", sets: 3, reps: "10", rest: 30 },
+          { name: "Mountain Climber", sets: 2, reps: "20 each", rest: 30 },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Day 3 — Obliques (10 min)",
+        exercises: [
+          { name: "Bicycle Crunch", sets: 3, reps: "20 each side", rest: 30, notes: "Slow — feel the oblique squeeze on each rep" },
+          { name: "Side Plank", sets: 2, reps: "25s each side", rest: 20 },
+          { name: "Russian Twist", sets: 3, reps: "15 each side", rest: 30 },
+          { name: "Windshield Wiper", sets: 2, reps: "10 each side", rest: 30, notes: "Lie on back, legs at 90°, rotate side to side" },
+        ],
+      },
+      {
+        dayNumber: 4,
+        name: "Day 4 — Deep Core & Stability (10 min)",
+        exercises: [
+          { name: "Dead Bug", sets: 3, reps: "8 each side", rest: 30, notes: "The most important core exercise for back health — do not rush" },
+          { name: "Plank", sets: 3, reps: "30-45s", rest: 30 },
+          { name: "Side Plank", sets: 2, reps: "20s each side", rest: 20 },
+          { name: "Hollow Body Hold", sets: 3, reps: "20s", rest: 30 },
+        ],
+      },
+      {
+        dayNumber: 5,
+        name: "Day 5 — Full Core Blast (10 min)",
+        exercises: [
+          { name: "Crunch", sets: 2, reps: "20", rest: 20 },
+          { name: "Leg Raise (Floor)", sets: 2, reps: "15", rest: 20 },
+          { name: "Bicycle Crunch", sets: 2, reps: "20 each side", rest: 20 },
+          { name: "Plank", sets: 2, reps: "30s", rest: 20 },
+          { name: "Russian Twist", sets: 2, reps: "15 each side", rest: 20 },
+          { name: "V-Up", sets: 2, reps: "10", rest: 30, notes: "Finish strong — go to failure on the last set" },
+        ],
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 17. ADVANCED CALISTHENICS CORE
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "Advanced Calisthenics Core",
+    description:
+      "Elite bodyweight core training using the most demanding calisthenics movements. " +
+      "Dragon flags, L-sits, toes-to-bar, hollow body progressions, and Copenhagen planks are the foundation. " +
+      "This program builds the kind of core strength seen in gymnasts and elite calisthenics athletes. " +
+      "LEVEL: Advanced — only attempt if you can do 15+ hanging leg raises, hold a 60-second plank, and do 10+ pull-ups.",
+    daysPerWeek: 3,
+    durationWeeks: 8,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Day 1 — Compression & Anti-Extension",
+        exercises: [
+          { name: "L-Sit Hold", sets: 5, reps: "10-15s", rest: 75, notes: "On parallel bars or floor. Build from tuck L-sit → one-leg extend → full L-sit. Rest fully between sets." },
+          { name: "Dragon Flag", sets: 4, reps: "5-8", rest: 90, notes: "Bruce Lee's signature. Rigid body from neck to feet — lower as one unit. Do NOT let hips pike." },
+          { name: "Hollow Body Hold", sets: 4, reps: "30-45s", rest: 60, notes: "Compress ribs to pelvis — lower back must stay flat. Progress to adding a rock/movement." },
+          { name: "Ab Wheel Rollout", sets: 4, reps: "10-12", rest: 75, notes: "From standing if possible. If not, from knees until you can do full." },
+          { name: "Toes-to-Bar", sets: 4, reps: "8-12", rest: 75, notes: "Strict — no kipping. Posterior tilt at the top for full ab contraction." },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Day 2 — Rotation & Lateral",
+        exercises: [
+          { name: "Copenhagen Plank", sets: 4, reps: "25-35s each side", rest: 75, notes: "Top foot on bench, bottom foot off the ground. One of the hardest lateral core exercises — build up gradually." },
+          { name: "Windshield Wiper", sets: 4, reps: "10-12 each side", rest: 75, notes: "Hang from a bar for advanced. Keep legs straight throughout the arc." },
+          { name: "Dragon Flag", sets: 3, reps: "6-8", rest: 90, notes: "Second session of the week — aim for better control than Day 1" },
+          { name: "Side Plank", sets: 3, reps: "45-60s each side", rest: 60, notes: "Progress to side plank with hip dip or thread-the-needle" },
+          { name: "Bicycle Crunch", sets: 3, reps: "20 each side", rest: 45, notes: "3-second hold at the peak of each rotation" },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Day 3 — Integrated Power",
+        exercises: [
+          { name: "Toes-to-Bar", sets: 5, reps: "10-15", rest: 75, notes: "Max quality reps. The goal is more reps than last week." },
+          { name: "L-Sit Hold", sets: 5, reps: "15-20s", rest: 75, notes: "Longer holds than Day 1 — same position, more time under tension" },
+          { name: "Dragon Flag", sets: 4, reps: "6-10", rest: 90, notes: "Add a brief pause at the lowest point before pressing back up" },
+          { name: "Hollow Body Hold", sets: 3, reps: "45-60s", rest: 60 },
+          { name: "Dead Bug", sets: 3, reps: "12 each side", rest: 45, notes: "Slow and deliberate — a strong foundation even for advanced athletes" },
+          { name: "Hanging Leg Raise", sets: 3, reps: "15", rest: 60, notes: "Strict — no swinging" },
+        ],
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 18. WEIGHTED ABS — Gym Core Program
+  // =========================================================================
+  await upsertProgram(SYSTEM_CORE_USER, {
+    name: "Weighted Abs — Gym Core Program",
+    description:
+      "Most people neglect progressive overload on abs. This program treats core like any other muscle — add weight, track reps, and progressively get stronger. " +
+      "Focuses on cable crunches, Pallof presses, and weighted movements to build thick, strong abs rather than just endurance. " +
+      "3 days per week. Can be paired with any lifting program as add-on finisher. " +
+      "LEVEL: Intermediate — requires access to a cable machine.",
+    daysPerWeek: 3,
+    durationWeeks: 6,
+    days: [
+      {
+        dayNumber: 1,
+        name: "Day 1 — Weighted Flexion",
+        exercises: [
+          { name: "Cable Crunch", sets: 4, reps: "15-20", rest: 60, notes: "Add weight every week. Pull through your abs — elbows stay fixed, don't use your hips. This is the best weighted ab exercise." },
+          { name: "Stability Ball Crunch", sets: 3, reps: "20-25", rest: 45, notes: "Hold a plate for added resistance. Full stretch at bottom." },
+          { name: "Hanging Leg Raise", sets: 4, reps: "12-15", rest: 60, notes: "Add ankle weights for progressive overload" },
+          { name: "Pallof Press", sets: 3, reps: "15 each side", rest: 60, notes: "Anti-rotation — add weight each week. Stand tall, don't rotate." },
+          { name: "Plank", sets: 3, reps: "45-60s", rest: 45, notes: "Add a weight plate on your back for added difficulty" },
+        ],
+      },
+      {
+        dayNumber: 2,
+        name: "Day 2 — Anti-Rotation & Obliques",
+        exercises: [
+          { name: "Pallof Press", sets: 5, reps: "12 each side", rest: 60, notes: "Main movement today. Increase weight from Day 1. Pause 2 seconds at full extension." },
+          { name: "Cable Crunch", sets: 3, reps: "20", rest: 45, notes: "Accessory after Pallof — lighter than Day 1" },
+          { name: "Russian Twist", sets: 4, reps: "15 each side", rest: 45, notes: "Hold a weight plate or dumbbell — feet off the floor for extra difficulty" },
+          { name: "Windshield Wiper", sets: 3, reps: "10-12 each side", rest: 60 },
+          { name: "Side Plank", sets: 3, reps: "30-45s each side", rest: 45 },
+        ],
+      },
+      {
+        dayNumber: 3,
+        name: "Day 3 — Heavy Compound Core",
+        exercises: [
+          { name: "Cable Crunch", sets: 5, reps: "12-15", rest: 75, notes: "Heaviest set of the week — increase load each session. Treat this like your squat for abs." },
+          { name: "Toes-to-Bar", sets: 4, reps: "10-15", rest: 75, notes: "Best bodyweight progression. Add ankle weights when 15 feels easy." },
+          { name: "Dragon Flag", sets: 3, reps: "6-10", rest: 90, notes: "Advanced — the ultimate weighted-feel bodyweight core movement" },
+          { name: "Pallof Press", sets: 3, reps: "12 each side", rest: 60 },
+          { name: "Ab Wheel Rollout", sets: 4, reps: "12-15", rest: 75, notes: "Standing rollout is the goal. From knees if still building." },
+        ],
+      },
+    ],
+  });
+
   console.log("\n✅ Core programs seeded successfully.\n");
 }
 
