@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark,
   Calculator, Target, Utensils, Droplets, Moon, Activity, Bell, TrendingUp,
-  Download, Settings, ChevronDown, ChevronRight, Zap, Swords,
+  Download, Settings, ChevronDown, ChevronRight, Zap, Swords, LayoutGrid,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -49,6 +49,55 @@ function NavGroup({ title, items, pathname }: { title: string; items: { href: st
   );
 }
 
+export function MobileNav() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { t } = useLanguage();
+
+  const items = [
+    { href: "/workout",          label: t.nav.dashboard,  icon: Dumbbell },
+    { href: "/workout/log",      label: t.nav.logSession, icon: Play },
+    { href: "/workout/progress", label: t.nav.progress,   icon: BarChart2 },
+    { href: "/workout/programs", label: t.nav.programs,   icon: BookOpen },
+    { href: "/workout/body",     label: t.nav.body,       icon: Scale },
+  ];
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  }
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      {items.map(({ href, label, icon: Icon }) => {
+        const active = href === "/workout" ? pathname === "/workout" : pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium transition-colors",
+              active
+                ? "text-gray-900 dark:text-white"
+                : "text-gray-400 dark:text-gray-500"
+            )}
+          >
+            <Icon className={cn("h-5 w-5", active && "text-gray-900 dark:text-white")} />
+            <span className="text-[10px] leading-none">{label}</span>
+          </Link>
+        );
+      })}
+      <button
+        onClick={logout}
+        className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500"
+      >
+        <LogOut className="h-5 w-5" />
+        <span className="text-[10px] leading-none">{t.nav.logout}</span>
+      </button>
+    </nav>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -58,7 +107,8 @@ export default function Sidebar() {
     { href: "/workout",            label: t.nav.dashboard,  icon: Dumbbell },
     { href: "/workout/log",        label: t.nav.logSession, icon: Play },
     { href: "/workout/programs",   label: t.nav.programs,   icon: Dumbbell },
-    { href: "/workout/legendary",  label: t.nav.legendary,  icon: Swords },
+    { href: "/workout/legendary",     label: t.nav.legendary,     icon: Swords },
+    { href: "/workout/core-programs", label: t.nav.corePrograms,  icon: LayoutGrid },
     { href: "/workout/calendar",   label: t.nav.calendar,   icon: Calendar },
     { href: "/workout/templates",  label: t.nav.templates,  icon: Bookmark },
     { href: "/workout/exercises",  label: t.nav.exercises,  icon: BookOpen },
@@ -89,7 +139,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+    <aside className="hidden md:flex h-screen w-56 flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
       <div className="flex h-14 items-center border-b border-gray-200 dark:border-gray-800 px-5">
         <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">Workout</span>
       </div>

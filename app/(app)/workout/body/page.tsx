@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
 
 interface BodyEntry {
@@ -113,6 +114,14 @@ export default function BodyPage() {
   const bfPcts = chronological.filter((e) => e.bodyFatPct).map((e) => parseFloat(e.bodyFatPct!));
   const latest = entries[0];
   const prev = entries[1];
+
+  const chartData = chronological
+    .filter((e) => e.weightLbs || e.bodyFatPct)
+    .map((e) => ({
+      date: new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      weight: e.weightLbs ? parseFloat(e.weightLbs) : null,
+      bf: e.bodyFatPct ? parseFloat(e.bodyFatPct) : null,
+    }));
 
   function delta(curr: string | null, p: string | null) {
     if (!curr || !p) return null;
@@ -237,6 +246,35 @@ export default function BodyPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Weight & Body Fat Chart */}
+      {!loading && chartData.length >= 2 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Weight Trend</CardTitle>
+            <CardDescription>Body weight and body fat % over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={chartData} margin={{ top: 4, right: 16, left: -16, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} interval="preserveStartEnd" />
+                <YAxis yAxisId="weight" tick={{ fontSize: 10, fill: "#9ca3af" }} domain={["auto", "auto"]} />
+                <YAxis yAxisId="bf" orientation="right" tick={{ fontSize: 10, fill: "#9ca3af" }} domain={["auto", "auto"]} unit="%" />
+                <Tooltip
+                  contentStyle={{ fontSize: 12 }}
+                  formatter={(v: unknown, name: string) =>
+                    name === "weight" ? [`${v} lb`, "Weight"] : [`${v}%`, "Body Fat"]
+                  }
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Line yAxisId="weight" type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls name="weight" />
+                <Line yAxisId="bf" type="monotone" dataKey="bf" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls name="bf" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
 
       {/* History */}
