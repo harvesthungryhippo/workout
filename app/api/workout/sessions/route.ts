@@ -7,12 +7,23 @@ import { withAuth, type AuthedRequest } from "@/lib/api/withAuth";
 async function getSessions(req: AuthedRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const limit = Math.min(100, parseInt(searchParams.get("limit") ?? "20"));
+    const limit = Math.min(200, parseInt(searchParams.get("limit") ?? "20"));
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+
+    const dateFilter = from || to ? {
+      startedAt: {
+        ...(from ? { gte: new Date(from) } : {}),
+        ...(to   ? { lte: new Date(to)   } : {}),
+      },
+    } : {};
+
+    const where = { userId: req.session.userId, ...dateFilter };
 
     const [sessions, total] = await Promise.all([
       prisma.workoutSession.findMany({
-        where: { userId: req.session.userId },
+        where,
         include: {
           exercises: {
             include: {
@@ -26,7 +37,7 @@ async function getSessions(req: AuthedRequest) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.workoutSession.count({ where: { userId: req.session.userId } }),
+      prisma.workoutSession.count({ where }),
     ]);
 
     return NextResponse.json({ sessions, total, page, limit });

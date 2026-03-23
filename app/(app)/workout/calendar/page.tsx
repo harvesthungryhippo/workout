@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
+import { ChevronLeft, ChevronRight, Dumbbell, RotateCcw, Pencil } from "lucide-react";
 import Link from "next/link";
 
 interface SessionSummary {
@@ -16,10 +16,6 @@ interface SessionSummary {
   durationSeconds: number | null;
   exerciseCount: number;
   volume: number;
-}
-
-interface DayMap {
-  [key: string]: { count: number; volume: number };
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -42,43 +38,65 @@ function formatDuration(s: number | null) {
   return ` · ${Math.floor(s / 60)}m`;
 }
 
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
 export default function CalendarPage() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [dayMap, setDayMap] = useState<DayMap>({});
   const [loading, setLoading] = useState(true);
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(toKey(today));
 
-  useEffect(() => {
+  const fetchMonth = useCallback((y: number, m: number) => {
     setLoading(true);
-    // Fetch stats for the past year to get dayMap
-    fetch("/api/workout/stats?days=365")
+    const from = new Date(y, m, 1).toISOString();
+    const to = new Date(y, m + 1, 0, 23, 59, 59).toISOString();
+    fetch(`/api/workout/sessions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=200`)
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
-        if (d) { setDayMap(d.dayMap ?? {}); setSessions(d.recentSessions ?? []); }
+        if (d?.sessions) {
+          // Flatten session data into a summary shape
+          setSessions(d.sessions.map((s: SessionSummary & { exercises?: { sets?: unknown[] }[] }) => ({
+            id: s.id,
+            name: s.name,
+            startedAt: s.startedAt,
+            completedAt: s.completedAt,
+            durationSeconds: s.durationSeconds,
+            exerciseCount: s.exercises?.length ?? s.exerciseCount ?? 0,
+            volume: s.volume ?? 0,
+          })));
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => { fetchMonth(year, month); }, [year, month, fetchMonth]);
+
   function prevMonth() {
-    if (month === 0) { setYear((y) => y - 1); setMonth(11); }
-    else setMonth((m) => m - 1);
-    setSelectedDay(null);
+    const newMonth = month === 0 ? 11 : month - 1;
+    const newYear = month === 0 ? year - 1 : year;
+    setYear(newYear); setMonth(newMonth); setSelectedDay(null);
   }
 
   function nextMonth() {
-    if (month === 11) { setYear((y) => y + 1); setMonth(0); }
-    else setMonth((m) => m + 1);
-    setSelectedDay(null);
+    const newMonth = month === 11 ? 0 : month + 1;
+    const newYear = month === 11 ? year + 1 : year;
+    setYear(newYear); setMonth(newMonth); setSelectedDay(null);
+  }
+
+  function goToday() {
+    setYear(today.getFullYear()); setMonth(today.getMonth());
+    setSelectedDay(toKey(today));
   }
 
   // Build calendar grid
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const startPad = firstDay.getDay(); // day of week (0=Sun) of first
+  const startPad = firstDay.getDay();
   const totalCells = Math.ceil((startPad + lastDay.getDate()) / 7) * 7;
 
   const cells: (Date | null)[] = [];
@@ -88,11 +106,28 @@ export default function CalendarPage() {
     else cells.push(new Date(year, month, dayNum));
   }
 
+  // Build dayMap from sessions
+  const dayMap: Record<string, { count: number; volume: number }> = {};
+  for (const s of sessions) {
+    const k = s.startedAt.slice(0, 10);
+    if (!dayMap[k]) dayMap[k] = { count: 0, volume: 0 };
+    dayMap[k].count++;
+    dayMap[k].volume += s.volume ?? 0;
+  }
+
   const selectedSessions = selectedDay
     ? sessions.filter((s) => s.startedAt.slice(0, 10) === selectedDay)
     : [];
 
-  const isFuture = (d: Date) => d > today;
+  // Month summary
+  const monthSessions = sessions.length;
+  const monthVolume = sessions.reduce((acc, s) => acc + (s.volume ?? 0), 0);
+  const activeDays = Object.keys(dayMap).length;
+
+  const isFuture = (d: Date) => {
+    const k = toKey(d);
+    return k > toKey(today);
+  };
 
   return (
     <div className="space-y-6">
@@ -100,6 +135,24 @@ export default function CalendarPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Calendar</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">View workouts by date.</p>
       </div>
+
+      {/* Month summary strip */}
+      {!loading && monthSessions > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Sessions", value: monthSessions },
+            { label: "Active days", value: activeDays },
+            { label: "Volume", value: formatVolume(monthVolume) },
+          ].map(({ label, value }) => (
+            <Card key={label}>
+              <CardContent className="pt-3 pb-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Card>
         <CardHeader className="pb-2">
@@ -110,7 +163,7 @@ export default function CalendarPage() {
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
-                onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); }}
+                onClick={goToday}
                 className="px-2 py-1 text-xs rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 Today
@@ -148,23 +201,34 @@ export default function CalendarPage() {
                       onClick={() => !future && setSelectedDay(isSelected ? null : key)}
                       disabled={future}
                       className={`
-                        relative aspect-square flex flex-col items-center justify-start p-1 rounded-lg text-xs transition-colors
-                        ${isSelected ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900" :
-                          isToday ? "border-2 border-gray-900 dark:border-white" :
-                          data ? "bg-green-50 dark:bg-green-950 hover:bg-green-100" :
-                          "hover:bg-gray-50 dark:hover:bg-gray-800"}
-                        ${future ? "opacity-30 cursor-default" : "cursor-pointer"}
+                        relative aspect-square flex flex-col items-center justify-start pt-1 pb-0.5 px-0.5 rounded-lg text-xs transition-colors
+                        ${isSelected
+                          ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                          : isToday
+                          ? "ring-2 ring-gray-900 dark:ring-white"
+                          : data
+                          ? "bg-green-50 dark:bg-green-950 hover:bg-green-100 dark:hover:bg-green-900"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800"}
+                        ${future ? "opacity-25 cursor-default" : "cursor-pointer"}
                       `}
                     >
-                      <span className={`font-medium leading-none ${isToday && !isSelected ? "text-gray-900 dark:text-white" : ""}`}>
+                      <span className={`font-medium leading-none text-xs ${isToday && !isSelected ? "text-gray-900 dark:text-white font-bold" : ""}`}>
                         {day.getDate()}
                       </span>
                       {data && (
-                        <div className="flex flex-col items-center mt-0.5 gap-0.5">
+                        <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
                           {Array.from({ length: Math.min(data.count, 3) }).map((_, j) => (
-                            <div key={j} className={`h-1 w-1 rounded-full ${isSelected ? "bg-white dark:bg-gray-900" : "bg-green-500"}`} />
+                            <div
+                              key={j}
+                              className={`h-1 w-1 rounded-full ${isSelected ? "bg-white dark:bg-gray-900" : "bg-green-500"}`}
+                            />
                           ))}
                         </div>
+                      )}
+                      {data && data.count > 1 && !isSelected && (
+                        <span className="text-green-600 dark:text-green-400 font-medium" style={{ fontSize: "9px" }}>
+                          ×{data.count}
+                        </span>
                       )}
                     </button>
                   );
@@ -179,37 +243,58 @@ export default function CalendarPage() {
       {selectedDay && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {new Date(selectedDay).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium">
+                {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+              </CardTitle>
+              {!isFuture(new Date(selectedDay + "T12:00:00")) && (
+                <Link href={`/workout/log?date=${selectedDay}`}>
+                  <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs">
+                    <Dumbbell className="h-3 w-3" /> Log workout
+                  </Button>
+                </Link>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {selectedSessions.length === 0 ? (
-              <div className="py-6 text-center">
-                <p className="text-sm text-gray-400 mb-3">No workouts logged.</p>
-                <Link href={`/workout/log`}>
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <Dumbbell className="h-4 w-4" /> Log workout
-                  </Button>
-                </Link>
-              </div>
+              <p className="text-sm text-gray-400 py-4 text-center">No workouts on this day.</p>
             ) : (
               <div className="divide-y">
                 {selectedSessions.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between py-3">
+                  <div key={s.id} className="flex items-center justify-between py-3 group">
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{s.name ?? "Workout"}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {s.exerciseCount} exercises
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {formatTime(s.startedAt)}
+                        {s.exerciseCount > 0 && ` · ${s.exerciseCount} exercises`}
                         {s.volume > 0 && ` · ${formatVolume(s.volume)}`}
                         {formatDuration(s.durationSeconds)}
                       </p>
                     </div>
-                    {s.completedAt ? (
-                      <Badge variant="secondary" className="text-xs">Completed</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs text-orange-500 border-orange-200">In progress</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {s.completedAt ? (
+                        <Badge variant="secondary" className="text-xs">Done</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-orange-500 border-orange-200">In progress</Badge>
+                      )}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link
+                          href={`/workout/log?repeatSessionId=${s.id}${s.name ? `&name=${encodeURIComponent(s.name)}` : ""}`}
+                          title="Repeat this session"
+                          className="text-gray-300 hover:text-green-600 transition-colors"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Link>
+                        <Link
+                          href={`/workout/sessions/${s.id}/edit`}
+                          title="Edit session"
+                          className="text-gray-300 hover:text-gray-600 transition-colors"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
