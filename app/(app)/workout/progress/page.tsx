@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil, Search } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil, Search, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -521,6 +521,13 @@ export default function ProgressPage() {
                         <p className="text-xs font-medium">{formatVolume(s.volume)}</p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">{formatDuration(s.durationSeconds)}</p>
                       </div>
+                      <Link
+                        href={`/workout/log?repeatSessionId=${s.id}${s.name ? `&name=${encodeURIComponent(s.name)}` : ""}`}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400"
+                        title="Repeat this session"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </Link>
                       <Link
                         href={`/workout/sessions/${s.id}/edit`}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300"

@@ -5,8 +5,32 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles, Pencil } from "lucide-react";
 import Link from "next/link";
+
+function GoalRing({ done, goal }: { done: number; goal: number }) {
+  const r = 28, cx = 32, cy = 32, stroke = 5;
+  const circumference = 2 * Math.PI * r;
+  const pct = Math.min(1, goal > 0 ? done / goal : 0);
+  return (
+    <svg width={64} height={64} className="shrink-0">
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-gray-100 dark:text-gray-800" />
+      <circle
+        cx={cx} cy={cy} r={r} fill="none"
+        stroke="currentColor" strokeWidth={stroke}
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * (1 - pct)}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${cx} ${cy})`}
+        className={pct >= 1 ? "text-green-500" : "text-indigo-500"}
+        style={{ transition: "stroke-dashoffset 0.5s ease" }}
+      />
+      <text x={cx} y={cy + 5} textAnchor="middle" fontSize="13" fontWeight="bold" fill="currentColor" className="fill-gray-900 dark:fill-white">
+        {done}/{goal}
+      </text>
+    </svg>
+  );
+}
 
 interface Stats {
   sessionCount: number;
@@ -75,6 +99,14 @@ export default function WorkoutPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeProgram, setActiveProgram] = useState<ActiveProgram | null>(null);
   const [loading, setLoading] = useState(true);
+  const [weeklyGoal, setWeeklyGoal] = useState(4);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalDraft, setGoalDraft] = useState("4");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("weekly_session_goal");
+    if (saved) { const n = parseInt(saved); if (n > 0) { setWeeklyGoal(n); setGoalDraft(String(n)); } }
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -182,7 +214,7 @@ export default function WorkoutPage() {
           </CardContent>
         </Card>
 
-        {/* Weekly Summary */}
+        {/* Weekly Summary + Goal Tracker */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">This Week</CardTitle>
@@ -193,21 +225,52 @@ export default function WorkoutPage() {
               <div className="space-y-3">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
             ) : (
               <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Sessions</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Last week: {stats?.weekly?.lastSessions ?? 0}</p>
+                {/* Weekly goal ring */}
+                <div className="flex items-center gap-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-4 py-3">
+                  <GoalRing done={stats?.weekly?.thisSessions ?? 0} goal={weeklyGoal} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {(stats?.weekly?.thisSessions ?? 0) >= weeklyGoal
+                        ? "Weekly goal reached! 🎉"
+                        : `${weeklyGoal - (stats?.weekly?.thisSessions ?? 0)} session${weeklyGoal - (stats?.weekly?.thisSessions ?? 0) !== 1 ? "s" : ""} to go`}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      {stats?.weekly?.thisSessions ?? 0} of {weeklyGoal} sessions this week
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold">{stats?.weekly?.thisSessions ?? 0}</p>
-                    {(stats?.weekly?.lastSessions ?? 0) > 0 && (
-                      <p className={`text-xs font-medium ${(stats?.weekly?.thisSessions ?? 0) >= (stats?.weekly?.lastSessions ?? 0) ? "text-green-600" : "text-red-500"}`}>
-                        {(stats?.weekly?.thisSessions ?? 0) >= (stats?.weekly?.lastSessions ?? 0) ? "+" : ""}
-                        {(stats?.weekly?.thisSessions ?? 0) - (stats?.weekly?.lastSessions ?? 0)} vs last
-                      </p>
-                    )}
-                  </div>
+                  {!editingGoal ? (
+                    <button
+                      onClick={() => { setGoalDraft(String(weeklyGoal)); setEditingGoal(true); }}
+                      className="text-gray-300 hover:text-gray-500 transition-colors"
+                      title="Edit weekly goal"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={1}
+                        max={14}
+                        value={goalDraft}
+                        onChange={(e) => setGoalDraft(e.target.value)}
+                        className="w-12 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-1.5 py-1 text-sm text-center text-gray-900 dark:text-white outline-none"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => {
+                          const n = parseInt(goalDraft);
+                          if (n > 0) { setWeeklyGoal(n); localStorage.setItem("weekly_session_goal", String(n)); }
+                          setEditingGoal(false);
+                        }}
+                        className="text-xs text-green-600 font-medium hover:text-green-700 px-1"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex items-center justify-between border-t pt-4">
                   <div>
                     <p className="text-sm font-medium">Volume</p>
@@ -223,7 +286,7 @@ export default function WorkoutPage() {
                     )}
                   </div>
                 </div>
-                <Link href="/workout/goals" className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mt-2">
+                <Link href="/workout/goals" className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <div className="flex items-center gap-3">
                     <Target className="h-4 w-4 text-gray-400" />
                     <span>View goals</span>

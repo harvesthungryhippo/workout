@@ -208,6 +208,7 @@ export default function LogWorkoutPage() {
   const programId = searchParams.get("programId") ?? undefined;
   const templateId = searchParams.get("templateId") ?? undefined;
   const sessionName = searchParams.get("name") ?? undefined;
+  const repeatSessionId = searchParams.get("repeatSessionId") ?? undefined;
 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -283,13 +284,13 @@ export default function LogWorkoutPage() {
   }, []);
 
   useEffect(() => {
-    const isNewSession = programDayId || programId || templateId || sessionName;
+    const isNewSession = programDayId || programId || templateId || sessionName || repeatSessionId;
 
     async function createNewSession() {
       const res = await fetch("/api/workout/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: sessionName, programId, programDayId, templateId }),
+        body: JSON.stringify({ name: sessionName, programId, programDayId, templateId, repeatSessionId }),
       });
       const s = await res.json();
       if (s && Array.isArray(s.exercises)) {
