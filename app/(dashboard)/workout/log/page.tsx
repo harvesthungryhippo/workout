@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Timer, Plus, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Check, Timer, Plus, ArrowLeft, CheckCircle2, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -34,6 +34,36 @@ interface Session {
   startedAt: string;
   completedAt: string | null;
   exercises: SessionExercise[];
+}
+
+interface PendingSync {
+  url: string;
+  method: string;
+  body: object;
+}
+
+interface PersistedState {
+  session: Session;
+  setInputs: Record<string, { reps: string; weight: string }>;
+  pendingSync: PendingSync[];
+  params: { programDayId?: string; programId?: string; sessionName?: string };
+}
+
+const STORAGE_KEY = "workout_active_session";
+
+function saveState(data: PersistedState) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+}
+
+function loadState(): PersistedState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function clearState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
 }
 
 function useTimer() {
@@ -82,14 +112,76 @@ export default function LogWorkoutPage() {
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string }>>({});
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingSync, setPendingSync] = useState<PendingSync[]>([]);
   const timer = useTimer();
   const [timerLabel, setTimerLabel] = useState("");
-  const sessionRef = useRef<Session | null>(null);
 
-  useEffect(() => { sessionRef.current = session; }, [session]);
+  const pendingSyncRef = useRef<PendingSync[]>([]);
+  useEffect(() => { pendingSyncRef.current = pendingSync; }, [pendingSync]);
 
-  // Start session on mount
+  // Persist state to localStorage on every change
   useEffect(() => {
+    if (!session) return;
+    saveState({ session, setInputs, pendingSync, params: { programDayId, programId, sessionName } });
+  }, [session, setInputs, pendingSync, programDayId, programId, sessionName]);
+
+  const drainSyncQueue = useCallback(async () => {
+    const queue = [...pendingSyncRef.current];
+    if (queue.length === 0) return;
+    const failed: PendingSync[] = [];
+    for (const op of queue) {
+      try {
+        const res = await fetch(op.url, {
+          method: op.method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(op.body),
+        });
+        if (!res.ok) failed.push(op);
+      } catch {
+        failed.push(op);
+      }
+    }
+    setPendingSync(failed);
+  }, []);
+
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      drainSyncQueue();
+    };
+    const handleOffline = () => setIsOnline(false);
+    setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [drainSyncQueue]);
+
+  // On mount: restore from localStorage if same workout, otherwise create new session
+  useEffect(() => {
+    const stored = loadState();
+
+    if (
+      stored &&
+      !stored.session.completedAt &&
+      stored.params.programDayId === programDayId &&
+      stored.params.programId === programId
+    ) {
+      setSession(stored.session);
+      setSetInputs(stored.setInputs);
+      setPendingSync(stored.pendingSync ?? []);
+      setLoading(false);
+      if ((stored.pendingSync ?? []).length > 0) {
+        pendingSyncRef.current = stored.pendingSync;
+        drainSyncQueue();
+      }
+      return;
+    }
+
     fetch("/api/workout/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -123,58 +215,82 @@ export default function LogWorkoutPage() {
     if (!session) return;
     const key = setKey(ex.id, set.setNumber);
     const input = setInputs[key] ?? { reps: "", weight: "" };
+    const reps = parseInt(input.reps) || undefined;
+    const weightKg = parseFloat(input.weight) || undefined;
 
-    const res = await fetch(
-      `/api/workout/sessions/${session.id}/exercises/${ex.id}/sets`,
-      {
+    // Update state optimistically — data is safe in localStorage even if network fails
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        exercises: prev.exercises.map((e) =>
+          e.id !== ex.id
+            ? e
+            : {
+                ...e,
+                sets: e.sets.map((s2) =>
+                  s2.setNumber !== set.setNumber
+                    ? s2
+                    : {
+                        ...s2,
+                        completed: true,
+                        reps: reps ?? s2.reps,
+                        weightKg: weightKg?.toString() ?? s2.weightKg,
+                      }
+                ),
+              }
+        ),
+      };
+    });
+
+    // Start rest timer immediately
+    const restSec = ex.restSeconds ?? 90;
+    timer.start(restSec);
+    setTimerLabel(`Rest: ${ex.exercise.name}`);
+
+    // Sync to server, queue if offline
+    const url = `/api/workout/sessions/${session.id}/exercises/${ex.id}/sets`;
+    const body = { setNumber: set.setNumber, reps, weightKg, completed: true };
+    try {
+      const res = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          setNumber: set.setNumber,
-          reps: parseInt(input.reps) || undefined,
-          weightKg: parseFloat(input.weight) || undefined,
-          completed: true,
-        }),
-      }
-    );
-
-    if (res.ok) {
-      setSession((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          exercises: prev.exercises.map((e) =>
-            e.id !== ex.id
-              ? e
-              : {
-                  ...e,
-                  sets: e.sets.map((s2) =>
-                    s2.setNumber !== set.setNumber ? s2 : { ...s2, completed: true }
-                  ),
-                }
-          ),
-        };
+        body: JSON.stringify(body),
       });
-      // Start rest timer
-      const restSec = ex.restSeconds ?? 90;
-      timer.start(restSec);
-      setTimerLabel(`Rest: ${ex.exercise.name}`);
+      if (!res.ok) throw new Error();
+    } catch {
+      setPendingSync((prev) => [...prev, { url, method: "PATCH", body }]);
     }
   }
 
   async function finishSession() {
     if (!session) return;
     setCompleting(true);
+
+    // Flush any queued set updates first
+    await drainSyncQueue();
+
     const durationSeconds = Math.round((Date.now() - new Date(session.startedAt).getTime()) / 1000);
-    const res = await fetch(`/api/workout/sessions/${session.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completedAt: new Date().toISOString(), durationSeconds }),
-    });
-    if (res.ok) {
-      toast.success("Session complete!");
-      router.push("/workout");
+    const url = `/api/workout/sessions/${session.id}`;
+    const body = { completedAt: new Date().toISOString(), durationSeconds };
+
+    try {
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        clearState();
+        toast.success("Session complete!");
+        router.push("/workout");
+        return;
+      }
+    } catch {
+      // offline
     }
+
+    toast.error("Could not save — connect to the internet and try again.");
     setCompleting(false);
   }
 
@@ -211,6 +327,16 @@ export default function LogWorkoutPage() {
           {completing ? "Saving..." : "Finish"}
         </Button>
       </div>
+
+      {/* Offline / pending sync indicator */}
+      {(!isOnline || pendingSync.length > 0) && (
+        <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
+          <WifiOff className="h-4 w-4 shrink-0" />
+          {!isOnline
+            ? "You're offline — your sets are saved locally and will sync when you reconnect."
+            : `Syncing ${pendingSync.length} set${pendingSync.length !== 1 ? "s" : ""}…`}
+        </div>
+      )}
 
       {/* Rest Timer */}
       {timer.running && (
