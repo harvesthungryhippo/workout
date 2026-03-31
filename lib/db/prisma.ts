@@ -6,10 +6,14 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 function createPrismaClient() {
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL!,
+    // Keep pool small — serverless functions share a limited connection pool
+    max: 2,
     ...(process.env.NODE_ENV === "production" && { ssl: { rejectUnauthorized: false } }),
   });
   return new PrismaClient({ adapter, log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"] });
 }
 
-export const prisma = globalForPrisma.prisma || createPrismaClient();
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Always reuse the global singleton — prevents new connections on every hot-reload
+// or repeated module evaluation in serverless environments
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+globalForPrisma.prisma = prisma;
