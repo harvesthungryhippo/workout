@@ -14,7 +14,21 @@ export async function POST(req: NextRequest) {
   try { body = schema.parse(await req.json()); }
   catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
 
-  const user = await prisma.workoutUser.findUnique({ where: { email: body.email } });
+  if (!process.env.JWT_SECRET) {
+    return NextResponse.json({ error: "Server misconfigured: JWT_SECRET is not set." }, { status: 500 });
+  }
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ error: "Server misconfigured: DATABASE_URL is not set." }, { status: 500 });
+  }
+
+  let user;
+  try {
+    user = await prisma.workoutUser.findUnique({ where: { email: body.email } });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: `Database error: ${msg}` }, { status: 500 });
+  }
+
   if (!user) return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
 
   const valid = await bcrypt.compare(body.password, user.passwordHash);
