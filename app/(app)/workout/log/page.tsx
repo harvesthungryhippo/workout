@@ -258,8 +258,14 @@ export default function LogWorkoutPage() {
   // Offline sync queue
   const [pendingSync, setPendingSync] = useState<PendingSync[]>([]);
   const [isOnline, setIsOnline] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const pendingSyncRef = useRef<PendingSync[]>([]);
-  useEffect(() => { pendingSyncRef.current = pendingSync; }, [pendingSync]);
+
+  // Keep ref in sync immediately (not just after render)
+  function updatePendingSync(queue: PendingSync[]) {
+    pendingSyncRef.current = queue;
+    setPendingSync(queue);
+  }
 
   // Feature 2: summary overlay
   const [summary, setSummary] = useState<SessionSummary | null>(null);
@@ -283,7 +289,8 @@ export default function LogWorkoutPage() {
 
   const drainSyncQueue = useCallback(async () => {
     const queue = [...pendingSyncRef.current];
-    if (queue.length === 0) return;
+    if (queue.length === 0 || !navigator.onLine) return;
+    setIsSyncing(true);
     const failed: PendingSync[] = [];
     for (const op of queue) {
       try {
@@ -297,19 +304,26 @@ export default function LogWorkoutPage() {
         failed.push(op);
       }
     }
+    pendingSyncRef.current = failed;
     setPendingSync(failed);
+    setIsSyncing(false);
   }, []);
 
-  // Track online/offline and auto-sync when reconnected
+  // Track online/offline and auto-sync when reconnected or page becomes visible
   useEffect(() => {
     const handleOnline = () => { setIsOnline(true); drainSyncQueue(); };
     const handleOffline = () => setIsOnline(false);
+    // On mobile, visibilitychange fires when you unlock the phone
+    const handleVisible = () => { if (navigator.onLine) { setIsOnline(true); drainSyncQueue(); } };
+
     setIsOnline(navigator.onLine);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    document.addEventListener("visibilitychange", handleVisible);
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      document.removeEventListener("visibilitychange", handleVisible);
     };
   }, [drainSyncQueue]);
 
@@ -397,8 +411,7 @@ export default function LogWorkoutPage() {
                 }
                 setSetInputs(merged);
                 if (saved.pendingSync?.length > 0) {
-                  setPendingSync(saved.pendingSync);
-                  pendingSyncRef.current = saved.pendingSync;
+                  updatePendingSync(saved.pendingSync);
                   drainSyncQueue();
                 }
                 toast.info("Resumed your active session.");
@@ -579,7 +592,7 @@ export default function LogWorkoutPage() {
 
     } else {
       // Network failed — queue for retry when online
-      setPendingSync((prev) => [...prev, { url, method: "PATCH", body }]);
+      updatePendingSync([...pendingSyncRef.current, { url, method: "PATCH", body }]);
     }
   }
 
@@ -947,11 +960,23 @@ export default function LogWorkoutPage() {
 
       {/* Offline / pending sync indicator */}
       {(!isOnline || pendingSync.length > 0) && (
-        <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-200">
-          <WifiOff className="h-4 w-4 shrink-0" />
-          {!isOnline
-            ? "You're offline — sets are saved locally and will sync when you reconnect."
-            : `Syncing ${pendingSync.length} set${pendingSync.length !== 1 ? "s" : ""}…`}
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-200">
+          <div className="flex items-center gap-2">
+            <WifiOff className="h-4 w-4 shrink-0" />
+            {!isOnline
+              ? `Offline — ${pendingSync.length > 0 ? `${pendingSync.length} set${pendingSync.length !== 1 ? "s" : ""} queued` : "sets saved locally"}`
+              : isSyncing
+                ? `Syncing ${pendingSync.length} set${pendingSync.length !== 1 ? "s" : ""}…`
+                : `${pendingSync.length} set${pendingSync.length !== 1 ? "s" : ""} not yet saved — tap to sync`}
+          </div>
+          {isOnline && !isSyncing && pendingSync.length > 0 && (
+            <button
+              onClick={drainSyncQueue}
+              className="text-xs font-semibold underline underline-offset-2"
+            >
+              Sync now
+            </button>
+          )}
         </div>
       )}
 
