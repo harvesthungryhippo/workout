@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2 } from "lucide-react";
+import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -150,6 +150,13 @@ function clearLsDraft() {
   try { localStorage.removeItem(LS_DRAFT_KEY); } catch { /* unavailable */ }
 }
 
+// ── Offline sync queue ───────────────────────────────────────────────────────
+interface PendingSync {
+  url: string;
+  method: string;
+  body: object;
+}
+
 function timeAgo(isoString: string): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffMin = Math.floor(diffMs / 60000);
@@ -166,16 +173,18 @@ const SESSION_STORAGE_KEY = "activeWorkoutSession";
 
 type SavedInputs = Record<string, { reps: string; weight: string; rpe: string; duration: string }>;
 
-function saveSessionState(sessionId: string, inputs: SavedInputs) {
+function saveSessionState(sessionId: string, inputs: SavedInputs, pendingSync: PendingSync[] = []) {
   try {
-    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, setInputs: inputs }));
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, setInputs: inputs, pendingSync }));
   } catch { /* storage unavailable */ }
 }
 
-function loadSessionState(): { sessionId: string; setInputs: SavedInputs } | null {
+function loadSessionState(): { sessionId: string; setInputs: SavedInputs; pendingSync: PendingSync[] } | null {
   try {
-    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return { ...parsed, pendingSync: parsed.pendingSync ?? [] };
   } catch {
     return null;
   }
@@ -183,7 +192,7 @@ function loadSessionState(): { sessionId: string; setInputs: SavedInputs } | nul
 
 function clearSessionState() {
   try {
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(SESSION_STORAGE_KEY);
   } catch { /* storage unavailable */ }
 }
 
@@ -246,6 +255,12 @@ export default function LogWorkoutPage() {
   // PRs hit during this session (for feature 2 summary)
   const sessionPrsRef = useRef<string[]>([]);
 
+  // Offline sync queue
+  const [pendingSync, setPendingSync] = useState<PendingSync[]>([]);
+  const [isOnline, setIsOnline] = useState(true);
+  const pendingSyncRef = useRef<PendingSync[]>([]);
+  useEffect(() => { pendingSyncRef.current = pendingSync; }, [pendingSync]);
+
   // Feature 2: summary overlay
   const [summary, setSummary] = useState<SessionSummary | null>(null);
 
@@ -259,12 +274,44 @@ export default function LogWorkoutPage() {
     setSessionNotes(session?.notes ?? "");
   }, [session?.id]);
 
-  // Persist active session ID + unsaved inputs so navigating away and back resumes the session
+  // Persist active session ID + unsaved inputs + sync queue to localStorage
   useEffect(() => {
     if (session?.id) {
-      saveSessionState(session.id, setInputs);
+      saveSessionState(session.id, setInputs, pendingSync);
     }
-  }, [session?.id, setInputs]);
+  }, [session?.id, setInputs, pendingSync]);
+
+  const drainSyncQueue = useCallback(async () => {
+    const queue = [...pendingSyncRef.current];
+    if (queue.length === 0) return;
+    const failed: PendingSync[] = [];
+    for (const op of queue) {
+      try {
+        const res = await fetch(op.url, {
+          method: op.method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(op.body),
+        });
+        if (!res.ok) failed.push(op);
+      } catch {
+        failed.push(op);
+      }
+    }
+    setPendingSync(failed);
+  }, []);
+
+  // Track online/offline and auto-sync when reconnected
+  useEffect(() => {
+    const handleOnline = () => { setIsOnline(true); drainSyncQueue(); };
+    const handleOffline = () => setIsOnline(false);
+    setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [drainSyncQueue]);
 
   // Feature 4: save localStorage draft whenever session changes
   useEffect(() => {
@@ -349,6 +396,11 @@ export default function LogWorkoutPage() {
                   }
                 }
                 setSetInputs(merged);
+                if (saved.pendingSync?.length > 0) {
+                  setPendingSync(saved.pendingSync);
+                  pendingSyncRef.current = saved.pendingSync;
+                  drainSyncQueue();
+                }
                 toast.info("Resumed your active session.");
                 return;
               }
@@ -421,26 +473,55 @@ export default function LogWorkoutPage() {
     const input = setInputs[key] ?? { reps: "", weight: "", rpe: "", duration: "" };
     const cardio = isCardio(ex);
 
-    const res = await fetch(
-      `/api/workout/sessions/${session.id}/exercises/${ex.id}/sets`,
-      {
+    const body = {
+      setNumber: set.setNumber,
+      ...(cardio
+        ? { durationSeconds: (parseFloat(input.duration) || 0) * 60 || undefined }
+        : {
+            reps: parseInt(input.reps) || undefined,
+            weightKg: parseFloat(input.weight) || undefined,
+            rpe: parseInt(input.rpe) || undefined,
+          }),
+      completed: true,
+    };
+
+    // Mark completed immediately — saved to localStorage before any network call
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        exercises: prev.exercises.map((e) =>
+          e.id !== ex.id ? e : {
+            ...e,
+            sets: e.sets.map((s2) =>
+              s2.setNumber !== set.setNumber ? s2 : { ...s2, completed: true }
+            ),
+          }
+        ),
+      };
+    });
+    if (!cardio && timerEnabled) {
+      const savedDefault = typeof window !== "undefined" ? parseInt(localStorage.getItem("default_rest_seconds") ?? "90") : 90;
+      const restSec = ex.restSeconds ?? (isNaN(savedDefault) ? 90 : savedDefault);
+      timer.start(restSec);
+      setTimerExName(ex.exercise.name);
+      setTimerLabel(`Rest: ${ex.exercise.name}`);
+    }
+
+    const url = `/api/workout/sessions/${session.id}/exercises/${ex.id}/sets`;
+    let res: Response | null = null;
+    try {
+      res = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          setNumber: set.setNumber,
-          ...(cardio
-            ? { durationSeconds: (parseFloat(input.duration) || 0) * 60 || undefined }
-            : {
-                reps: parseInt(input.reps) || undefined,
-                weightKg: parseFloat(input.weight) || undefined,
-                rpe: parseInt(input.rpe) || undefined,
-              }),
-          completed: true,
-        }),
-      }
-    );
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) res = null;
+    } catch {
+      res = null;
+    }
 
-    if (res.ok) {
+    if (res) {
       // Feature 1: PR check
       if (!cardio) {
         // input.weight is treated as lb for PR comparison (matches the "Weight (lb)" UI label).
@@ -496,27 +577,9 @@ export default function LogWorkoutPage() {
         }
       }
 
-      setSession((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          exercises: prev.exercises.map((e) =>
-            e.id !== ex.id ? e : {
-              ...e,
-              sets: e.sets.map((s2) =>
-                s2.setNumber !== set.setNumber ? s2 : { ...s2, completed: true }
-              ),
-            }
-          ),
-        };
-      });
-      if (!cardio && timerEnabled) {
-        const savedDefault = typeof window !== "undefined" ? parseInt(localStorage.getItem("default_rest_seconds") ?? "90") : 90;
-        const restSec = ex.restSeconds ?? (isNaN(savedDefault) ? 90 : savedDefault);
-        timer.start(restSec);
-        setTimerExName(ex.exercise.name);
-        setTimerLabel(`Rest: ${ex.exercise.name}`);
-      }
+    } else {
+      // Network failed — queue for retry when online
+      setPendingSync((prev) => [...prev, { url, method: "PATCH", body }]);
     }
   }
 
@@ -881,6 +944,16 @@ export default function LogWorkoutPage() {
           </Button>
         </div>
       </div>
+
+      {/* Offline / pending sync indicator */}
+      {(!isOnline || pendingSync.length > 0) && (
+        <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-200">
+          <WifiOff className="h-4 w-4 shrink-0" />
+          {!isOnline
+            ? "You're offline — sets are saved locally and will sync when you reconnect."
+            : `Syncing ${pendingSync.length} set${pendingSync.length !== 1 ? "s" : ""}…`}
+        </div>
+      )}
 
       {/* Rest Timer */}
       {timer.running && (
