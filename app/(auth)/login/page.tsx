@@ -23,11 +23,11 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Login failed."); return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error ?? `Login failed (${res.status}).`); return; }
       router.push("/workout");
     } catch {
-      setError("Something went wrong.");
+      setError("Could not reach the server. Check your connection.");
     } finally {
       setLoading(false);
     }
