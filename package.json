@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && next build",
     "start": "next start --port 3001",
     "postinstall": "prisma generate",
     "seed": "npx tsx seed.ts && npx tsx seed-legendary.ts && npx tsx seed-core-programs.ts"
