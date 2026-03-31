@@ -53,13 +53,52 @@ export function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useLanguage();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const items = [
+  const pinned = [
     { href: "/workout",          label: t.nav.dashboard,  icon: Dumbbell },
     { href: "/workout/log",      label: t.nav.logSession, icon: Play },
     { href: "/workout/progress", label: t.nav.progress,   icon: BarChart2 },
     { href: "/workout/programs", label: t.nav.programs,   icon: BookOpen },
-    { href: "/workout/body",     label: t.nav.body,       icon: Scale },
+  ];
+
+  const allGroups = [
+    {
+      title: t.nav.train,
+      items: [
+        { href: "/workout",              label: t.nav.dashboard,    icon: Dumbbell },
+        { href: "/workout/log",          label: t.nav.logSession,   icon: Play },
+        { href: "/workout/programs",     label: t.nav.programs,     icon: Dumbbell },
+        { href: "/workout/legendary",    label: t.nav.legendary,    icon: Swords },
+        { href: "/workout/core-programs",label: t.nav.corePrograms, icon: LayoutGrid },
+        { href: "/workout/calendar",     label: t.nav.calendar,     icon: Calendar },
+        { href: "/workout/templates",    label: t.nav.templates,    icon: Bookmark },
+        { href: "/workout/exercises",    label: t.nav.exercises,    icon: BookOpen },
+        { href: "/workout/progress",     label: t.nav.progress,     icon: BarChart2 },
+        { href: "/workout/overload",     label: t.nav.overload,     icon: TrendingUp },
+        { href: "/workout/goals",        label: t.nav.goals,        icon: Target },
+        { href: "/workout/cardio",       label: t.nav.cardio,       icon: Zap },
+      ],
+    },
+    {
+      title: t.nav.health,
+      items: [
+        { href: "/workout/body",      label: t.nav.body,      icon: Scale },
+        { href: "/workout/nutrition", label: t.nav.nutrition, icon: Utensils },
+        { href: "/workout/water",     label: t.nav.water,     icon: Droplets },
+        { href: "/workout/sleep",     label: t.nav.sleep,     icon: Moon },
+        { href: "/workout/recovery",  label: t.nav.recovery,  icon: Activity },
+      ],
+    },
+    {
+      title: t.nav.tools,
+      items: [
+        { href: "/workout/1rm",       label: t.nav.oneRM,     icon: Calculator },
+        { href: "/workout/reminders", label: t.nav.reminders, icon: Bell },
+        { href: "/workout/export",    label: t.nav.export,    icon: Download },
+        { href: "/workout/settings",  label: t.nav.settings,  icon: Settings },
+      ],
+    },
   ];
 
   async function logout() {
@@ -68,33 +107,89 @@ export function MobileNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-      {items.map(({ href, label, icon: Icon }) => {
-        const active = href === "/workout" ? pathname === "/workout" : pathname.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium transition-colors",
-              active
-                ? "text-gray-900 dark:text-white"
-                : "text-gray-400 dark:text-gray-500"
-            )}
-          >
-            <Icon className={cn("h-5 w-5", active && "text-gray-900 dark:text-white")} />
-            <span className="text-[10px] leading-none">{label}</span>
-          </Link>
-        );
-      })}
-      <button
-        onClick={logout}
-        className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500"
-      >
-        <LogOut className="h-5 w-5" />
-        <span className="text-[10px] leading-none">{t.nav.logout}</span>
-      </button>
-    </nav>
+    <>
+      {/* Full-screen menu overlay */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900 md:hidden">
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 px-4 h-14">
+            <span className="text-base font-bold text-gray-900 dark:text-white">Menu</span>
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="p-2 text-gray-500 dark:text-gray-400"
+            >
+              <ChevronDown className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+            {allGroups.map((group) => (
+              <div key={group.title}>
+                <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  {group.title}
+                </p>
+                <div className="space-y-0.5">
+                  {group.items.map(({ href, label, icon: Icon }) => {
+                    const active = href === "/workout" ? pathname === "/workout" : pathname.startsWith(href);
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setMenuOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                          active
+                            ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
+                            : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                        )}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        {label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-gray-200 dark:border-gray-800 p-3 space-y-1">
+            <ThemeToggle />
+            <button
+              onClick={logout}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              {t.nav.logout}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+        {pinned.map(({ href, label, icon: Icon }) => {
+          const active = href === "/workout" ? pathname === "/workout" : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium transition-colors",
+                active ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px] leading-none">{label}</span>
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => setMenuOpen(true)}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500"
+        >
+          <LayoutGrid className="h-5 w-5" />
+          <span className="text-[10px] leading-none">More</span>
+        </button>
+      </nav>
+    </>
   );
 }
 
