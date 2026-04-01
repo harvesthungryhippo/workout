@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark,
   Calculator, Target, Utensils, Droplets, Moon, Activity, Bell, TrendingUp,
-  Download, Settings, ChevronDown, ChevronRight, Zap, Swords, LayoutGrid,
+  Download, Settings, ChevronDown, ChevronRight, Zap, Swords, LayoutGrid, ShieldCheck,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -49,7 +49,7 @@ function NavGroup({ title, items, pathname }: { title: string; items: { href: st
   );
 }
 
-export function MobileNav() {
+export function MobileNav({ isAdmin }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useLanguage();
@@ -151,6 +151,16 @@ export function MobileNav() {
             ))}
           </div>
           <div className="border-t border-gray-200 dark:border-gray-800 p-3 space-y-1">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+              >
+                <ShieldCheck className="h-5 w-5" />
+                Admin
+              </Link>
+            )}
             <ThemeToggle />
             <button
               onClick={logout}
@@ -193,7 +203,7 @@ export function MobileNav() {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isAdmin }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useLanguage();
@@ -244,6 +254,20 @@ export default function Sidebar() {
         <NavGroup title={t.nav.tools} items={NAV_TOOLS} pathname={pathname} />
       </nav>
       <div className="border-t border-gray-200 dark:border-gray-800 p-3 space-y-1">
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              pathname.startsWith("/admin")
+                ? "bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300"
+                : "text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950"
+            )}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Admin
+          </Link>
+        )}
         <ThemeToggle />
         <button
           onClick={logout}
