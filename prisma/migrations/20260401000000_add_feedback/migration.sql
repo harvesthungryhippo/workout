@@ -27,3 +27,4 @@ CREATE INDEX "Feedback_createdAt_idx" ON "Feedback"("createdAt");
 -- Feedback table migration
 -- resolve trigger
 -- resolve trigger 2
+-- resolve trigger 3
