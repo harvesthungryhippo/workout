@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ interface SessionExercise {
 interface Session {
   id: string;
   name: string | null;
+  notes: string | null;
   startedAt: string;
   completedAt: string | null;
   exercises: SessionExercise[];
@@ -47,6 +49,8 @@ export default function EditSessionPage() {
   const [inputs, setInputs] = useState<Record<string, { reps: string; weight: string }>>({});
   const [sessionName, setSessionName] = useState("");
   const [sessionDate, setSessionDate] = useState("");
+  const [sessionNotes, setSessionNotes] = useState("");
+  const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch(`/api/workout/sessions/${id}`)
@@ -55,6 +59,10 @@ export default function EditSessionPage() {
         setSession(s);
         setSessionName(s.name ?? "");
         setSessionDate(new Date(s.startedAt).toISOString().slice(0, 16));
+        setSessionNotes(s.notes ?? "");
+        const initNotes: Record<string, string> = {};
+        for (const ex of s.exercises) initNotes[ex.id] = ex.notes ?? "";
+        setExerciseNotes(initNotes);
         const init: Record<string, { reps: string; weight: string }> = {};
         for (const ex of s.exercises) {
           for (const set of ex.sets) {
@@ -75,9 +83,10 @@ export default function EditSessionPage() {
     setSaving(true);
 
     try {
-      // Update session name/date if changed
+      // Update session metadata
       const sessionChanged =
         sessionName !== (session.name ?? "") ||
+        sessionNotes !== (session.notes ?? "") ||
         sessionDate !== new Date(session.startedAt).toISOString().slice(0, 16);
       if (sessionChanged) {
         await fetch(`/api/workout/sessions/${id}`, {
@@ -85,14 +94,25 @@ export default function EditSessionPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: sessionName || null,
+            notes: sessionNotes || null,
             startedAt: new Date(sessionDate).toISOString(),
           }),
         });
       }
 
-      // Update all sets
+      // Update all sets + exercise notes
       const patches: Promise<Response>[] = [];
       for (const ex of session.exercises) {
+        // Save exercise notes if changed
+        if ((exerciseNotes[ex.id] ?? "") !== (ex.notes ?? "")) {
+          patches.push(
+            fetch(`/api/workout/sessions/${id}/exercises/${ex.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ notes: exerciseNotes[ex.id]?.trim() || null }),
+            })
+          );
+        }
         for (const set of ex.sets) {
           const key = `${ex.id}-${set.setNumber}`;
           const input = inputs[key];
@@ -175,6 +195,15 @@ export default function EditSessionPage() {
         </div>
       </div>
 
+      {/* Session notes */}
+      <Textarea
+        value={sessionNotes}
+        onChange={(e) => setSessionNotes(e.target.value)}
+        placeholder="Session notes..."
+        className="text-sm resize-none"
+        rows={2}
+      />
+
       {session.exercises.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-10 text-center">
@@ -195,6 +224,14 @@ export default function EditSessionPage() {
                 <span>Weight (lb)</span>
                 <span></span>
               </div>
+              {/* Exercise notes */}
+              <Textarea
+                value={exerciseNotes[ex.id] ?? ""}
+                onChange={(e) => setExerciseNotes((prev) => ({ ...prev, [ex.id]: e.target.value }))}
+                placeholder="Exercise notes..."
+                className="text-xs resize-none mb-3"
+                rows={1}
+              />
               <div className="space-y-2">
                 {ex.sets.map((set) => {
                   const key = `${ex.id}-${set.setNumber}`;

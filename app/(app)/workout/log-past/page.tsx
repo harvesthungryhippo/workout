@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Calendar } from "lucide-react";
 import Link from "next/link";
 
@@ -13,11 +14,13 @@ export default function LogPastSessionPage() {
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
   const [name, setName] = useState("");
+  const [notes, setNotes] = useState("");
 
   function start() {
     const startedAt = new Date(`${date}T09:00:00`).toISOString();
     const params = new URLSearchParams({ pastDate: startedAt });
     if (name.trim()) params.set("name", name.trim());
+    if (notes.trim()) params.set("notes", notes.trim());
     router.push(`/workout/log?${params.toString()}`);
   }
 
@@ -55,6 +58,18 @@ export default function LogPastSessionPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Push Day"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Notes <span className="text-gray-400">(optional)</span>
+            </label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="How did it go?"
+              rows={2}
+              className="resize-none text-sm"
             />
           </div>
           <Button onClick={start} className="w-full" disabled={!date}>

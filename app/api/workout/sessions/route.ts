@@ -100,6 +100,7 @@ const createSchema = z.object({
   templateId: z.string().optional(),
   repeatSessionId: z.string().optional(),
   startedAt: z.string().datetime().optional(),
+  notes: z.string().optional(),
 });
 
 async function createSession(req: AuthedRequest) {
@@ -190,6 +191,7 @@ async function createSession(req: AuthedRequest) {
         programId: body.programId,
         programDayId: body.programDayId,
         startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
+        notes: body.notes,
         exercises: exercisesData.length > 0 ? { create: exercisesData } : undefined,
       },
       include: {
