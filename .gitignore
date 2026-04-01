@@ -8,3 +8,6 @@ next-env.d.ts
 .vercel
 .DS_Store
 .claude/settings.local.json
+
+.env*.local
+.env.local
