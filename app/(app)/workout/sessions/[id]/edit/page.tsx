@@ -22,6 +22,7 @@ interface WorkoutSet {
 interface SessionExercise {
   id: string;
   order: number;
+  notes: string | null;
   exercise: { id: string; name: string; muscleGroup: string };
   sets: WorkoutSet[];
 }
