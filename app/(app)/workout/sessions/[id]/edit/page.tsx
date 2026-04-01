@@ -46,6 +46,7 @@ export default function EditSessionPage() {
   const [saving, setSaving] = useState(false);
   const [inputs, setInputs] = useState<Record<string, { reps: string; weight: string }>>({});
   const [sessionName, setSessionName] = useState("");
+  const [sessionDate, setSessionDate] = useState("");
 
   useEffect(() => {
     fetch(`/api/workout/sessions/${id}`)
@@ -53,6 +54,7 @@ export default function EditSessionPage() {
       .then((s: Session) => {
         setSession(s);
         setSessionName(s.name ?? "");
+        setSessionDate(new Date(s.startedAt).toISOString().slice(0, 16));
         const init: Record<string, { reps: string; weight: string }> = {};
         for (const ex of s.exercises) {
           for (const set of ex.sets) {
@@ -73,12 +75,18 @@ export default function EditSessionPage() {
     setSaving(true);
 
     try {
-      // Update session name if changed
-      if (sessionName !== (session.name ?? "")) {
+      // Update session name/date if changed
+      const sessionChanged =
+        sessionName !== (session.name ?? "") ||
+        sessionDate !== new Date(session.startedAt).toISOString().slice(0, 16);
+      if (sessionChanged) {
         await fetch(`/api/workout/sessions/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: sessionName || null }),
+          body: JSON.stringify({
+            name: sessionName || null,
+            startedAt: new Date(sessionDate).toISOString(),
+          }),
         });
       }
 
@@ -152,11 +160,13 @@ export default function EditSessionPage() {
               placeholder="Session name"
               className="text-lg font-semibold h-10"
             />
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {new Date(session.startedAt).toLocaleDateString("en-US", {
-                weekday: "long", year: "numeric", month: "long", day: "numeric",
-              })}
-            </p>
+            <input
+              type="datetime-local"
+              value={sessionDate}
+              max={new Date().toISOString().slice(0, 16)}
+              onChange={(e) => setSessionDate(e.target.value)}
+              className="text-xs text-gray-500 dark:text-gray-400 bg-transparent border-b border-dashed border-gray-300 dark:border-gray-600 focus:outline-none focus:border-gray-500 mt-1"
+            />
           </div>
           <Button onClick={save} disabled={saving} className="gap-2 shrink-0">
             <Save className="h-4 w-4" />

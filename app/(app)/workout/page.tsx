@@ -257,12 +257,20 @@ export default function WorkoutPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track sessions, follow programs, and monitor progress.</p>
         </div>
-        <Link href="/workout/log">
-          <Button className="gap-2">
-            <Play className="h-4 w-4" />
-            Start Session
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/workout/log-past">
+            <Button variant="outline" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Log Past
+            </Button>
+          </Link>
+          <Link href="/workout/log">
+            <Button className="gap-2">
+              <Play className="h-4 w-4" />
+              Start Session
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

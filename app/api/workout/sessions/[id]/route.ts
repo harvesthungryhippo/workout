@@ -32,6 +32,7 @@ const patchSchema = z.object({
   notes: z.string().optional().nullable(),
   durationSeconds: z.number().int().min(0).optional(),
   completedAt: z.string().datetime().optional(),
+  startedAt: z.string().datetime().optional(),
 });
 
 async function updateSession(req: AuthedRequest, ctx: Params) {
@@ -57,6 +58,7 @@ async function updateSession(req: AuthedRequest, ctx: Params) {
         notes: body.notes,
         durationSeconds: body.durationSeconds,
         completedAt: body.completedAt ? new Date(body.completedAt) : undefined,
+        startedAt: body.startedAt ? new Date(body.startedAt) : undefined,
       },
       include: {
         exercises: {
