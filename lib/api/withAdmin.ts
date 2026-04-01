@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { isAdmin } from "@/lib/auth/isAdmin";
-import type { AuthedRequest } from "./withAuth";
-import type { Params } from "./withAuth";
+import type { AuthedRequest, Params } from "./withAuth";
+
+export type { AuthedRequest };
 
 type Handler = (req: AuthedRequest, ctx: Params) => Promise<NextResponse>;
 
