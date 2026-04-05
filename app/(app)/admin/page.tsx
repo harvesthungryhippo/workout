@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Users, Dumbbell, BarChart2, MessageSquare, TrendingUp, Flame } from "lucide-react";
+import { Users, Dumbbell, BarChart2, MessageSquare, TrendingUp, Flame, Building2 } from "lucide-react";
 import Link from "next/link";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -76,11 +76,13 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">App usage and feedback overview.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">App usage and feedback overview.</p>
+      </div>
+
+      {/* Navigation row */}
+      <div className="flex flex-wrap gap-2">
         <Link href="/admin/feedback">
           <div className="relative">
             <button className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
@@ -93,6 +95,12 @@ export default function AdminDashboard() {
               </span>
             )}
           </div>
+        </Link>
+        <Link href="/admin/organizations">
+          <button className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <Building2 className="h-4 w-4" />
+            Organizations
+          </button>
         </Link>
       </div>
 
