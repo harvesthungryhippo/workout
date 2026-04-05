@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil, Search, RotateCcw } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil, Search, RotateCcw, BookmarkPlus } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/date";
@@ -342,6 +342,28 @@ export default function ProgressPage() {
     setTimeout(() => chartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
+  async function saveSessionAsTemplate(id: string, name: string | null) {
+    const res = await fetch(`/api/workout/sessions/${id}`);
+    if (!res.ok) { toast.error("Could not load session."); return; }
+    const session = await res.json();
+    const exercises = (session.exercises ?? []).map(
+      (ex: { exerciseId: string; order: number; sets: unknown[] }, i: number) => ({
+        exerciseId: ex.exerciseId,
+        order: ex.order ?? i,
+        sets: ex.sets.length || 3,
+        reps: "8-12",
+        restSeconds: 90,
+      })
+    );
+    const tRes = await fetch("/api/workout/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name ?? "Workout", exercises }),
+    });
+    if (tRes.ok) toast.success("Saved as template!");
+    else toast.error("Failed to save template.");
+  }
+
   async function deleteSession(id: string) {
     const res = await fetch(`/api/workout/sessions/${id}`, { method: "DELETE" });
     if (res.ok) {
@@ -524,6 +546,13 @@ export default function ProgressPage() {
                         <p className="text-xs font-medium">{formatVolume(s.volume)}</p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">{formatDuration(s.durationSeconds)}</p>
                       </div>
+                      <button
+                        onClick={() => saveSessionAsTemplate(s.id, s.name)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-gray-600 hover:text-indigo-500"
+                        title="Save as template"
+                      >
+                        <BookmarkPlus className="h-3.5 w-3.5" />
+                      </button>
                       <Link
                         href={`/workout/log?repeatSessionId=${s.id}${s.name ? `&name=${encodeURIComponent(s.name)}` : ""}`}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-gray-600 hover:text-green-600 dark:hover:text-green-400"
