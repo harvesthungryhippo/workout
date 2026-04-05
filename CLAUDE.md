@@ -42,7 +42,7 @@ A full-stack personal fitness tracker built with Next.js 15, Prisma, PostgreSQL 
 - [ ] Org/Team feature — DB columns exist (organizationId, orgRole on WorkoutUser, Organization table) but ZERO app code built yet
 
 ## Recent Commits
-- (next) — Add password reset + email verification, CLAUDE.md context file
+- 11fd5e4 — Add password reset, email verification, and CLAUDE.md context
 - 57683f3 — Fix calendar 500: add lightweight summary mode to sessions API
 - 9df96c8 — Fix JSX parse error: wrap PR list and hint text in fragment
 - a83a21b — Improve calendar: per-month fetching, summary strip, session actions
