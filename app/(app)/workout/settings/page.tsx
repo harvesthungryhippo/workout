@@ -33,10 +33,12 @@ export default function SettingsPage() {
   const [savingPassword, setSavingPassword] = useState(false);
 
   const [defaultRest, setDefaultRest] = useState(90);
+  const [timerEnabled, setTimerEnabled] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem("default_rest_seconds");
     if (saved) setDefaultRest(parseInt(saved));
+    setTimerEnabled(localStorage.getItem("timer_enabled") !== "false");
   }, []);
 
   useEffect(() => {
@@ -150,6 +152,24 @@ export default function SettingsPage() {
               ))}
             </div>
             <p className="text-xs text-gray-400">Rest timer starts automatically after completing a set.</p>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Rest timer</p>
+              <p className="text-xs text-gray-400 mt-0.5">Auto-start timer after each set.</p>
+            </div>
+            <button
+              onClick={() => {
+                const next = !timerEnabled;
+                setTimerEnabled(next);
+                localStorage.setItem("timer_enabled", String(next));
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${timerEnabled ? "bg-gray-900 dark:bg-white" : "bg-gray-200 dark:bg-gray-700"}`}
+              role="switch"
+              aria-checked={timerEnabled}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white dark:bg-gray-900 shadow transform transition-transform ${timerEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
           </div>
         </CardContent>
       </Card>

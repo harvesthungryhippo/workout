@@ -240,7 +240,9 @@ export default function LogWorkoutPage() {
   const [timerExName, setTimerExName] = useState("");
   const timer = useTimer(useCallback(() => sendRestNotification(timerExName), [timerExName]));
   const [timerLabel, setTimerLabel] = useState("");
-  const [timerEnabled, setTimerEnabled] = useState(true);
+  const [timerEnabled, setTimerEnabled] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("timer_enabled") !== "false" : true
+  );
   const [savingTemplate, setSavingTemplate] = useState(false);
   const sessionRef = useRef<Session | null>(null);
 
@@ -1019,7 +1021,7 @@ export default function LogWorkoutPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setTimerEnabled((v) => !v)}
+            onClick={() => setTimerEnabled((v) => { localStorage.setItem("timer_enabled", String(!v)); return !v; })}
             className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md border transition-colors ${timerEnabled ? "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300" : "border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500"}`}
             title={timerEnabled ? "Disable rest timer" : "Enable rest timer"}
           >
