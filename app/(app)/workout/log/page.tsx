@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, WifiOff } from "lucide-react";
+import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, WifiOff, Dumbbell } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -224,6 +224,7 @@ export default function LogWorkoutPage() {
 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [readyToStart, setReadyToStart] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string; rpe: string; duration: string }>>({});
   const [showPicker, setShowPicker] = useState(false);
@@ -420,9 +421,12 @@ export default function LogWorkoutPage() {
                 return;
               }
             }
-          } catch { /* fall through to create new */ }
+          } catch { /* fall through */ }
           clearSessionState();
         }
+        // No saved session and no params — show prompt instead of auto-creating
+        setReadyToStart(true);
+        return;
       } else {
         clearSessionState();
         clearLsDraft();
@@ -821,6 +825,39 @@ export default function LogWorkoutPage() {
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (readyToStart && !session) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 text-center">
+        <Dumbbell className="h-12 w-12 text-gray-300 dark:text-gray-600" />
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ready to train?</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Start a blank session or pick a program.</p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            onClick={async () => {
+              setReadyToStart(false);
+              setLoading(true);
+              const res = await fetch("/api/workout/sessions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+              });
+              const s = await res.json();
+              if (s && Array.isArray(s.exercises)) { setSession(s); initInputs(s); saveSessionState(s.id, {}); }
+              setLoading(false);
+            }}
+          >
+            Start Blank Session
+          </Button>
+          <Link href="/workout/programs">
+            <Button variant="outline">Pick a Program</Button>
+          </Link>
+        </div>
       </div>
     );
   }
