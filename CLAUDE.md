@@ -39,9 +39,10 @@ A full-stack personal fitness tracker built with Next.js 15, Prisma, PostgreSQL 
 - [ ] Data import (export exists, import does not)
 - [ ] Error tracking (no Sentry or equivalent)
 - [ ] Tests (none exist)
-- [ ] Org/Team feature — DB columns exist (organizationId, orgRole on WorkoutUser, Organization table) but ZERO app code built yet
+- [x] Org/Team feature — full CRUD built (cbec41c): create org, invite by email, manage roles (OWNER/ADMIN/MEMBER), remove members, leave/disband
 
 ## Recent Commits
+- cbec41c — Add Organization/Team feature
 - 11fd5e4 — Add password reset, email verification, and CLAUDE.md context
 - 57683f3 — Fix calendar 500: add lightweight summary mode to sessions API
 - 9df96c8 — Fix JSX parse error: wrap PR list and hint text in fragment
