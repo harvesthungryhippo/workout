@@ -227,6 +227,11 @@ export default function LogWorkoutPage() {
   const [loading, setLoading] = useState(true);
   const [readyToStart, setReadyToStart] = useState(false);
   const [completing, setCompleting] = useState(false);
+
+  // Template picker on the ready-to-start screen
+  interface TemplateOption { id: string; name: string; exercises: { exercise: { name: string } }[] }
+  const [templates, setTemplates] = useState<TemplateOption[]>([]);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string; rpe: string; duration: string }>>({});
   const [showPicker, setShowPicker] = useState(false);
   const [allExercises, setAllExercises] = useState<{ id: string; name: string; muscleGroup: string; category: string }[]>([]);
@@ -279,6 +284,15 @@ export default function LogWorkoutPage() {
 
   useEffect(() => { sessionRef.current = session; }, [session]);
   useEffect(() => { requestNotificationPermission(); }, []);
+
+  useEffect(() => {
+    if (readyToStart) {
+      fetch("/api/workout/templates")
+        .then((r) => r.ok ? r.json() : [])
+        .then(setTemplates)
+        .catch(() => setTemplates([]));
+    }
+  }, [readyToStart]);
 
   useEffect(() => {
     setSessionNotes(session?.notes ?? "");
@@ -830,35 +844,56 @@ export default function LogWorkoutPage() {
     );
   }
 
+  async function startSession(body: Record<string, string | undefined>) {
+    setReadyToStart(false);
+    setLoading(true);
+    const res = await fetch("/api/workout/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const s = await res.json();
+    if (s && Array.isArray(s.exercises)) { setSession(s); initInputs(s); saveSessionState(s.id, {}); }
+    setLoading(false);
+  }
+
   if (readyToStart && !session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 text-center px-4">
         <Dumbbell className="h-12 w-12 text-gray-300 dark:text-gray-600" />
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ready to train?</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Start a blank session or pick a program.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Start a blank session, use a template, or pick a program.</p>
         </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={async () => {
-              setReadyToStart(false);
-              setLoading(true);
-              const res = await fetch("/api/workout/sessions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({}),
-              });
-              const s = await res.json();
-              if (s && Array.isArray(s.exercises)) { setSession(s); initInputs(s); saveSessionState(s.id, {}); }
-              setLoading(false);
-            }}
-          >
-            Start Blank Session
+        <div className="flex gap-3 flex-wrap justify-center">
+          <Button onClick={() => startSession({})}>Start Blank Session</Button>
+          <Button variant="outline" onClick={() => setShowTemplatePicker((v) => !v)}>
+            {showTemplatePicker ? "Hide Templates" : "Use a Template"}
           </Button>
           <Link href="/workout/programs">
             <Button variant="outline">Pick a Program</Button>
           </Link>
         </div>
+        {showTemplatePicker && (
+          <div className="w-full max-w-sm space-y-2 text-left">
+            {templates.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-2">No templates saved yet.</p>
+            ) : (
+              templates.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => startSession({ templateId: t.id, name: t.name })}
+                  className="w-full text-left rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{t.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {t.exercises.map((e) => e.exercise.name).join(", ")}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
     );
   }
