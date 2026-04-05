@@ -57,8 +57,6 @@ async function getStats(req: AuthedRequest) {
   const sessionsPerWeek = sessions.length / (days / 7);
   const prevSessionsPerWeek = prevSessions.length / (days / 7);
 
-  const KG_TO_LB = 2.20462;
-
   // PRs per exercise: max weight (in lb) and reps at that max-weight set
   const prs: Record<string, { exerciseName: string; exerciseId: string; maxWeight: number; maxReps: number; maxVolume: number }> = {};
 
@@ -76,18 +74,17 @@ async function getStats(req: AuthedRequest) {
       }
       for (const set of ex.sets) {
         if (!set.completed) continue;
-        const weightKg = Number(set.weightKg ?? 0);
-        const weightLb = weightKg * KG_TO_LB;
+        // weightKg column stores lbs (column is misnamed — values are entered as lbs throughout the UI)
+        const weightLb = Number(set.weightKg ?? 0);
         const reps = set.reps ?? 0;
-        if (weightKg > 0 && weightLb > prs[key].maxWeight) {
-          // Track maxWeight in lb, and capture the reps from that same set
+        if (weightLb > 0 && weightLb > prs[key].maxWeight) {
           prs[key].maxWeight = Math.round(weightLb * 10) / 10;
           prs[key].maxReps = reps;
-        } else if (weightKg === 0 && reps > prs[key].maxReps) {
+        } else if (weightLb === 0 && reps > prs[key].maxReps) {
           // Bodyweight exercise: track max reps independently
           prs[key].maxReps = reps;
         }
-        const vol = reps * weightKg;
+        const vol = reps * weightLb;
         if (vol > prs[key].maxVolume) prs[key].maxVolume = vol;
       }
     }
