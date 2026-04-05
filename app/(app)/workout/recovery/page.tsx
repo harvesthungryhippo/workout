@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, X, Activity } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 
 interface RecoveryEntry {
   id: string;
@@ -225,7 +226,7 @@ export default function RecoveryPage() {
                         </div>
                       )}
                       <div>
-                        <p className="text-xs text-gray-500">{new Date(e.date).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500">{formatDate(e.date)}</p>
                         {e.overallScore && <p className={`text-xs font-medium ${SCORE_LABELS[e.overallScore]?.color}`}>{SCORE_LABELS[e.overallScore]?.label}</p>}
                       </div>
                     </div>

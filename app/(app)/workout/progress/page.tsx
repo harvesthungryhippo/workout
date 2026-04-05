@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, Minus, Trophy, Trash2, Flame, Pencil, Search, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { formatDate } from "@/lib/utils/date";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell,
@@ -251,7 +252,7 @@ function ExerciseChart({ prs, preselect }: { prs: Stats["prs"]; preselect?: stri
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 10, fill: "#9ca3af" }}
-                  tickFormatter={(d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  tickFormatter={(d) => formatDate(d, { month: "short", day: "numeric" })}
                   interval="preserveStartEnd"
                 />
                 <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} />
@@ -262,7 +263,7 @@ function ExerciseChart({ prs, preselect }: { prs: Stats["prs"]; preselect?: stri
                     metric === "maxWeight" ? `${v} lb` : metric === "maxReps" ? `${v} reps` : formatVolume(Number(v)),
                     metric === "maxWeight" ? "Max Weight" : metric === "maxReps" ? "Max Reps" : "Volume",
                   ]}
-                  labelFormatter={(l) => new Date(l).toLocaleDateString()}
+                  labelFormatter={(l) => formatDate(l)}
                 />
                 <Line
                   type="monotone"
@@ -516,7 +517,7 @@ export default function ProgressPage() {
                   <div key={s.id} className="flex items-center justify-between py-3 group">
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{s.name ?? "Workout"}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(s.startedAt).toLocaleDateString()} · {s.exerciseCount} exercises</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(s.startedAt)} · {s.exerciseCount} exercises</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">

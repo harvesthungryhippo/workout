@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { toChicagoInputValue } from "@/lib/utils/date";
 
 interface WorkoutSet {
   id: string;
@@ -59,7 +60,7 @@ export default function EditSessionPage() {
       .then((s: Session) => {
         setSession(s);
         setSessionName(s.name ?? "");
-        setSessionDate(new Date(s.startedAt).toISOString().slice(0, 16));
+        setSessionDate(toChicagoInputValue(new Date(s.startedAt)));
         setSessionNotes(s.notes ?? "");
         const initNotes: Record<string, string> = {};
         for (const ex of s.exercises) initNotes[ex.id] = ex.notes ?? "";
@@ -88,7 +89,7 @@ export default function EditSessionPage() {
       const sessionChanged =
         sessionName !== (session.name ?? "") ||
         sessionNotes !== (session.notes ?? "") ||
-        sessionDate !== new Date(session.startedAt).toISOString().slice(0, 16);
+        sessionDate !== toChicagoInputValue(new Date(session.startedAt));
       if (sessionChanged) {
         await fetch(`/api/workout/sessions/${id}`, {
           method: "PATCH",
@@ -184,7 +185,7 @@ export default function EditSessionPage() {
             <input
               type="datetime-local"
               value={sessionDate}
-              max={new Date().toISOString().slice(0, 16)}
+              max={toChicagoInputValue(new Date())}
               onChange={(e) => setSessionDate(e.target.value)}
               className="text-xs text-gray-500 dark:text-gray-400 bg-transparent border-b border-dashed border-gray-300 dark:border-gray-600 focus:outline-none focus:border-gray-500 mt-1"
             />

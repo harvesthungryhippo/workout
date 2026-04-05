@@ -9,6 +9,7 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDate } from "@/lib/utils/date";
 
 interface FeedbackItem {
   id: string;
@@ -72,7 +73,7 @@ function FeedbackCard({ item, onUpdate }: { item: FeedbackItem; onUpdate: (updat
             <Badge className={`text-xs ${STATUS_COLORS[item.status]}`}>{item.status.replace("_", " ")}</Badge>
           </div>
           <span className="text-xs text-gray-400 shrink-0">
-            {new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {formatDate(item.createdAt, { month: "short", day: "numeric", year: "numeric" })}
           </span>
         </div>
 

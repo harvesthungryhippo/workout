@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Moon, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 interface SleepEntry {
@@ -77,7 +78,7 @@ export default function SleepPage() {
   }
 
   const chartData = [...entries].reverse().slice(-14).map((e) => ({
-    date: new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: formatDate(e.date, { month: "short", day: "numeric" }),
     hours: +(e.durationMins / 60).toFixed(1),
     quality: e.quality,
   }));
@@ -220,7 +221,7 @@ export default function SleepPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">{new Date(e.date).toLocaleDateString()}{e.notes && ` · ${e.notes}`}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{formatDate(e.date)}{e.notes && ` · ${e.notes}`}</p>
                   </div>
                   <button
                     onClick={() => deleteEntry(e.id)}

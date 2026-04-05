@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 
 interface BodyEntry {
   id: string;
@@ -132,7 +133,7 @@ export default function BodyPage() {
   const chartData = chronological
     .filter((e) => e.weightLbs || e.bodyFatPct)
     .map((e) => ({
-      date: new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      date: formatDate(e.date, { month: "short", day: "numeric" }),
       weight: e.weightLbs ? parseFloat(e.weightLbs) : null,
       bf: e.bodyFatPct ? parseFloat(e.bodyFatPct) : null,
     }));
@@ -347,7 +348,7 @@ export default function BodyPage() {
               {entries.map((e) => (
                 <div key={e.id} className="flex items-center justify-between py-3 group">
                   <div>
-                    <p className="text-sm font-medium">{new Date(e.date).toLocaleDateString()}</p>
+                    <p className="text-sm font-medium">{formatDate(e.date)}</p>
                     <p className="text-xs text-gray-400">
                       {[
                         e.weightLbs && `${parseFloat(e.weightLbs)} lb`,

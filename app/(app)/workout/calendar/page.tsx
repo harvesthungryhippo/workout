@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Dumbbell, RotateCcw, Pencil } from "lucide-react";
 import Link from "next/link";
+import { formatTime, formatDate } from "@/lib/utils/date";
 
 interface SessionSummary {
   id: string;
@@ -38,9 +39,6 @@ function formatDuration(s: number | null) {
   return ` · ${Math.floor(s / 60)}m`;
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
 
 export default function CalendarPage() {
   const today = new Date();
@@ -245,7 +243,7 @@ export default function CalendarPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium">
-                {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                {formatDate(selectedDay + "T12:00:00", { weekday: "long", month: "long", day: "numeric" })}
               </CardTitle>
               {!isFuture(new Date(selectedDay + "T12:00:00")) && (
                 <Link href={`/workout/log?date=${selectedDay}`}>

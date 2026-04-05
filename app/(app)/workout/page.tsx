@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles, Pencil, Droplets, Moon } from "lucide-react";
 import Link from "next/link";
+import { formatDate } from "@/lib/utils/date";
 
 function GoalRing({ done, goal }: { done: number; goal: number }) {
   const r = 28, cx = 32, cy = 32, stroke = 5;
@@ -336,7 +337,7 @@ export default function WorkoutPage() {
                     <div>
                       <p className="text-sm font-medium">{s.name ?? "Workout"}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(s.startedAt).toLocaleDateString()} · {s.exerciseCount} exercises
+                        {formatDate(s.startedAt)} · {s.exerciseCount} exercises
                       </p>
                     </div>
                     <div className="text-right">

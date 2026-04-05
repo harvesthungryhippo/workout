@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Pencil, Play, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 
 interface TemplateExercise {
   id: string;
@@ -124,7 +125,7 @@ export default function TemplatesPage() {
                         <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity" />
                       </CardTitle>
                     )}
-                    <CardDescription>{new Date(t.createdAt).toLocaleDateString()}</CardDescription>
+                    <CardDescription>{formatDate(t.createdAt)}</CardDescription>
                   </div>
                   <button
                     onClick={() => deleteTemplate(t.id)}

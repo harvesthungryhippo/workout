@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { formatDate } from "@/lib/utils/date";
 
 interface Exercise {
   id: string;
@@ -148,7 +149,7 @@ export default function OverloadPage() {
                     {history.map((h, i) => (
                       <div key={i} className="py-3 flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-gray-500">{new Date(h.date).toLocaleDateString()}</p>
+                          <p className="text-xs text-gray-500">{formatDate(h.date)}</p>
                           <div className="flex gap-3 mt-0.5">
                             <span className="text-sm font-medium">{h.maxWeightLb} lb</span>
                             <span className="text-sm text-gray-500">× {h.maxReps} reps</span>

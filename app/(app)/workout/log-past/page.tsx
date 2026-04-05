@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Calendar } from "lucide-react";
 import Link from "next/link";
+import { todayChicago } from "@/lib/utils/date";
 
 export default function LogPastSessionPage() {
   const router = useRouter();
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayChicago();
   const [date, setDate] = useState(today);
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");

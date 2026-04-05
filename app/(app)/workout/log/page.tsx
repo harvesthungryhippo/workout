@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, WifiOff, Dumbbell } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 
 function requestNotificationPermission() {
   if (typeof Notification !== "undefined" && Notification.permission === "default") {
@@ -1119,7 +1120,7 @@ export default function LogWorkoutPage() {
               {lastSession && lastSession.sets.length > 0 && (
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2 space-y-0.5">
                   <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                    Last time · {new Date(lastSession.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    Last time · {formatDate(lastSession.date, { month: "short", day: "numeric" })}
                   </p>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                     {lastSession.sets.map((s) => (

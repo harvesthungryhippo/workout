@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Droplets, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { formatTime } from "@/lib/utils/date";
 
 interface WaterEntry {
   id: string;
@@ -180,7 +181,7 @@ export default function WaterPage() {
                     <span className="text-xs text-gray-400">({e.amountMl} ml)</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400">{new Date(e.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    <span className="text-xs text-gray-400">{formatTime(e.date)}</span>
                     <button
                       onClick={() => deleteEntry(e.id, e.amountMl)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500"

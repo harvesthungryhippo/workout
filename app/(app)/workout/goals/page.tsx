@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 
 interface Exercise { id: string; name: string }
 interface Goal {
@@ -284,7 +285,7 @@ export default function GoalsPage() {
                       </button>
                       <p className="text-sm line-through text-gray-400">{goal.name}</p>
                       <CardDescription className="text-xs">
-                        {new Date(goal.completedAt!).toLocaleDateString()}
+                        {formatDate(goal.completedAt!)}
                       </CardDescription>
                     </div>
                     <button onClick={() => deleteGoal(goal.id)} className="text-gray-300 hover:text-red-500">

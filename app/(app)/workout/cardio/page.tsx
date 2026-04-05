@@ -12,6 +12,7 @@ import {
   PersonStanding, Zap, ClipboardList, Timer,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -874,7 +875,7 @@ export default function CardioPage() {
                         </Badge>
                       )}
                       <p className="text-sm font-medium">
-                        {new Date(s.startedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                        {formatDate(s.startedAt, { month: "short", day: "numeric", year: "numeric" })}
                       </p>
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5">

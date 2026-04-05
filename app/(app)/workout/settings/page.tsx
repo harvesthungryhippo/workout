@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils/date";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { Language } from "@/lib/i18n/translations";
 
@@ -173,7 +174,7 @@ export default function SettingsPage() {
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="text-xs text-gray-500">
-                  Member since {profile ? new Date(profile.createdAt).toLocaleDateString() : "—"}
+                  Member since {profile ? formatDate(profile.createdAt) : "—"}
                 </div>
                 <Button type="submit" disabled={savingProfile} size="sm">
                   {savingProfile ? "Saving..." : "Save profile"}
