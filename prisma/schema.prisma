@@ -62,9 +62,13 @@ model WorkoutUser {
   passwordHash   String
   name           String?
   createdAt      DateTime      @default(now())
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  orgRole        OrgRole       @default(MEMBER)
+  organizationId      String?
+  orgRole             OrgRole       @default(MEMBER)
+  emailVerified       Boolean       @default(false)
+  verificationToken   String?       @unique
+  resetToken          String?       @unique
+  resetTokenExpiresAt DateTime?
+  organization        Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
 }

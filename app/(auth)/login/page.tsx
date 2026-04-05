@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const verified = searchParams.get("verified") === "1";
+  const reset = searchParams.get("reset") === "1";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +43,8 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t.auth.signInTitle}</p>
       </div>
+      {verified && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">Email verified! You can now sign in.</p>}
+      {reset && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">Password updated. Sign in with your new password.</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.auth.email}</label>
@@ -53,7 +59,10 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.auth.password}</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.auth.password}</label>
+            <Link href="/forgot-password" className="text-xs text-gray-500 dark:text-gray-400 hover:underline">Forgot password?</Link>
+          </div>
           <input
             type="password"
             value={password}
@@ -76,5 +85,13 @@ export default function LoginPage() {
         <Link href="/register" className="text-gray-900 dark:text-white font-medium hover:underline">{t.auth.signUp}</Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
