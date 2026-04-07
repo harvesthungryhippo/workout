@@ -32,16 +32,19 @@ A full-stack personal fitness tracker built with Next.js 15, Prisma, PostgreSQL 
 
 ## Known Gaps / Todo
 - [x] Password reset + email verification — API routes + pages built (needs RESEND_API_KEY in Vercel env)
-- [ ] Rate limiting on auth endpoints
-- [ ] Reminders UI and actual push/email notification delivery
-- [ ] Program editing (currently delete-only after creation)
+- [x] Rate limiting — IP-based, 10/min login, 5/min register + forgot-password (lib/api/rateLimit.ts)
+- [x] Reminders — already fully built (UI + API) in 88f123f
+- [x] Program editing — PUT /api/workout/programs/[id] + /workout/programs/[id]/edit page
+- [x] Feedback page — /workout/feedback + POST /api/workout/feedback
+- [x] Org/Team feature — full CRUD: create org, invite by email, manage roles, remove members
 - [ ] Superset/dropset UI (model supports supersetGroup, no UI)
 - [ ] Data import (export exists, import does not)
 - [ ] Error tracking (no Sentry or equivalent)
 - [ ] Tests (none exist)
-- [x] Org/Team feature — full CRUD built (cbec41c): create org, invite by email, manage roles (OWNER/ADMIN/MEMBER), remove members, leave/disband
+- [ ] Admin panel (isAdmin hints exist in sidebar/layout from 88f123f — needs building out)
 
 ## Recent Commits
+- d799e97 — Add rate limiting, program editing, and feedback
 - cbec41c — Add Organization/Team feature
 - 11fd5e4 — Add password reset, email verification, and CLAUDE.md context
 - 57683f3 — Fix calendar 500: add lightweight summary mode to sessions API
