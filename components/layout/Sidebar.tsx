@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark,
   Calculator, Target, Utensils, Droplets, Moon, Activity, Bell, TrendingUp,
-  Download, Settings, ChevronDown, ChevronRight, Zap, Swords, LayoutGrid, ShieldCheck, Building2, MessageSquare,
+  Download, Upload, Settings, ChevronDown, ChevronRight, Zap, Swords, LayoutGrid, ShieldCheck, Building2, MessageSquare,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -96,6 +96,7 @@ export function MobileNav({ isAdmin }: { isAdmin?: boolean }) {
         { href: "/workout/1rm",       label: t.nav.oneRM,     icon: Calculator },
         { href: "/workout/reminders", label: t.nav.reminders, icon: Bell },
         { href: "/workout/export",    label: t.nav.export,    icon: Download },
+        { href: "/workout/import",    label: "Import",        icon: Upload },
         { href: "/workout/org",       label: "Organization",  icon: Building2 },
         { href: "/workout/feedback",  label: "Feedback",      icon: MessageSquare },
         { href: "/workout/settings",  label: t.nav.settings,  icon: Settings },
