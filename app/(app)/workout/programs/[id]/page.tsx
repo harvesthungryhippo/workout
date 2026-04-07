@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Play, ArrowLeft } from "lucide-react";
+import { Play, ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
 
 interface ProgramExercise {
@@ -89,6 +89,11 @@ export default function ProgramDetailPage() {
               {program.daysPerWeek} days/week · {program.durationWeeks} weeks
             </p>
           </div>
+          <Link href={`/workout/programs/${program.id}/edit`}>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </Button>
+          </Link>
         </div>
       </div>
 

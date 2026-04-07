@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { issueToken } from "@/lib/auth/token";
+import { checkRateLimit, rateLimitResponse } from "@/lib/api/rateLimit";
 import bcrypt from "bcryptjs";
 
 const schema = z.object({
@@ -10,6 +11,9 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  if (!checkRateLimit(`login:${ip}`, 10, 60_000)) return rateLimitResponse();
+
   let body: z.infer<typeof schema>;
   try { body = schema.parse(await req.json()); }
   catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
