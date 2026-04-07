@@ -41,9 +41,10 @@ A full-stack personal fitness tracker built with Next.js 15, Prisma, PostgreSQL 
 - [ ] Data import (export exists, import does not)
 - [ ] Error tracking (no Sentry or equivalent)
 - [ ] Tests (none exist)
-- [ ] Admin panel (isAdmin hints exist in sidebar/layout from 88f123f — needs building out)
+- [x] Admin panel (5b00152): /admin dashboard (stats+charts), /admin/users, /admin/feedback (status management), /admin/organizations — set ADMIN_EMAIL in Vercel env to activate
 
 ## Recent Commits
+- 5b00152 — Add admin panel (dashboard, users, feedback, organizations)
 - d799e97 — Add rate limiting, program editing, and feedback
 - cbec41c — Add Organization/Team feature
 - 11fd5e4 — Add password reset, email verification, and CLAUDE.md context
