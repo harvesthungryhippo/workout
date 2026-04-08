@@ -246,6 +246,9 @@ export default function LogWorkoutPage() {
   const [savingTemplate, setSavingTemplate] = useState(false);
   const sessionRef = useRef<Session | null>(null);
 
+  // Superset group picker
+  const [supersetPickerFor, setSupersetPickerFor] = useState<string | null>(null);
+
   // Notes editing
   const [editingNotes, setEditingNotes] = useState<Record<string, boolean>>({});
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
@@ -1120,8 +1123,20 @@ export default function LogWorkoutPage() {
               </div>
               <div className="flex items-center gap-1 ml-2 shrink-0">
                 <button
-                  onClick={() => setSupersetGroup(ex, ex.supersetGroup != null ? null : (Math.max(0, ...session.exercises.map(e => e.supersetGroup ?? 0)) + 1))}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  onClick={() => {
+                    if (ex.supersetGroup != null) {
+                      setSupersetGroup(ex, null);
+                      setSupersetPickerFor(null);
+                    } else {
+                      const existingGroups = [...new Set(session.exercises.map(e => e.supersetGroup).filter((g): g is number => g != null))];
+                      if (existingGroups.length === 0) {
+                        setSupersetGroup(ex, 1);
+                      } else {
+                        setSupersetPickerFor(supersetPickerFor === ex.id ? null : ex.id);
+                      }
+                    }
+                  }}
+                  className={`p-1.5 transition-colors ${ex.supersetGroup != null ? "text-blue-500 hover:text-gray-400" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"}`}
                   title={ex.supersetGroup != null ? "Remove from superset" : "Add to superset"}
                 >
                   <Link2 className="h-3.5 w-3.5" />
@@ -1142,6 +1157,31 @@ export default function LogWorkoutPage() {
                 </button>
               </div>
             </CardHeader>
+            {supersetPickerFor === ex.id && (
+              <div className="mx-6 mb-3 flex flex-wrap gap-2 items-center">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Join superset:</span>
+                {[...new Set(session.exercises.map(e => e.supersetGroup).filter((g): g is number => g != null))].map(g => (
+                  <button
+                    key={g}
+                    onClick={() => { setSupersetGroup(ex, g); setSupersetPickerFor(null); }}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${supersetColors[(g - 1) % supersetColors.length]} hover:opacity-80`}
+                  >
+                    Group {g}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    const next = Math.max(0, ...session.exercises.map(e => e.supersetGroup ?? 0)) + 1;
+                    setSupersetGroup(ex, next);
+                    setSupersetPickerFor(null);
+                  }}
+                  className="px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-500 transition-colors"
+                >
+                  + New group
+                </button>
+                <button onClick={() => setSupersetPickerFor(null)} className="text-xs text-gray-400 hover:text-gray-600 ml-1">Cancel</button>
+              </div>
+            )}
             <CardContent className="pt-0 space-y-3">
               {/* Overload hint */}
               {hint && (

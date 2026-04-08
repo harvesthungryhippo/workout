@@ -69,8 +69,21 @@ model WorkoutUser {
   resetToken          String?       @unique
   resetTokenExpiresAt DateTime?
   organization        Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  pushSubscriptions   WorkoutPushSubscription[]
 
   @@index([organizationId])
+}
+
+model WorkoutPushSubscription {
+  id        String      @id @default(cuid())
+  userId    String
+  endpoint  String      @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime    @default(now())
+  user      WorkoutUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Exercise {

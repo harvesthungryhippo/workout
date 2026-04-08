@@ -26,6 +26,7 @@ export default function RemindersPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [notifPerm, setNotifPerm] = useState<NotificationPermission>("default");
+  const [pushSubscribed, setPushSubscribed] = useState(false);
   const scheduledRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const [dayOfWeek, setDayOfWeek] = useState(1); // Monday
@@ -42,6 +43,14 @@ export default function RemindersPage() {
       .then((d) => { if (d) setReminders(d.reminders ?? []); })
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    // Register service worker and check push subscription status
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      navigator.serviceWorker.register("/sw.js").then(async (reg) => {
+        const existing = await reg.pushManager.getSubscription();
+        setPushSubscribed(!!existing);
+      }).catch(console.error);
+    }
   }, []);
 
   // Schedule browser notifications for enabled reminders
@@ -86,8 +95,40 @@ export default function RemindersPage() {
     if (typeof Notification === "undefined") { toast.error("Notifications not supported in this browser."); return; }
     const perm = await Notification.requestPermission();
     setNotifPerm(perm);
-    if (perm === "granted") toast.success("Notifications enabled!");
-    else toast.error("Notification permission denied.");
+    if (perm === "granted") {
+      await subscribeToPush();
+      toast.success("Notifications enabled! You'll be notified even when the app is closed.");
+    } else {
+      toast.error("Notification permission denied.");
+    }
+  }
+
+  async function subscribeToPush() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidKey) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+      await fetch("/api/workout/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub.toJSON()),
+      });
+      setPushSubscribed(true);
+    } catch (err) {
+      console.error("Push subscribe failed:", err);
+    }
+  }
+
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
   }
 
   async function addReminder(e: React.FormEvent) {
@@ -149,7 +190,7 @@ export default function RemindersPage() {
               <p className="text-sm text-orange-700 dark:text-orange-300">
                 {notifPerm === "denied"
                   ? "Notifications blocked. Enable them in your browser settings."
-                  : "Enable notifications to receive workout reminders."}
+                  : "Enable push notifications to be reminded even when the app is closed."}
               </p>
             </div>
             {notifPerm !== "denied" && (
@@ -157,6 +198,19 @@ export default function RemindersPage() {
                 Enable
               </Button>
             )}
+          </CardContent>
+        </Card>
+      )}
+      {notifPerm === "granted" && !pushSubscribed && (
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+          <CardContent className="pt-4 pb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <BellRing className="h-4 w-4 text-blue-500 shrink-0" />
+              <p className="text-sm text-blue-700 dark:text-blue-300">Subscribe to receive reminders when the app is closed.</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={subscribeToPush} className="shrink-0 border-blue-300 text-blue-700">
+              Subscribe
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -256,7 +310,7 @@ export default function RemindersPage() {
         </CardHeader>
         <CardContent>
           <CardDescription className="text-xs leading-relaxed">
-            Reminders use your browser&apos;s notification system. You must have this tab open (or the app installed as a PWA) for notifications to fire. For reliable reminders, consider saving this app to your home screen.
+            Reminders use Web Push — you&apos;ll receive notifications even when the app is closed, as long as your browser is running. Times are in your browser&apos;s local timezone. Enable notifications above to activate push delivery.
           </CardDescription>
         </CardContent>
       </Card>
