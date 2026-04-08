@@ -48,13 +48,14 @@ A full-stack personal fitness tracker built with Next.js 15, Prisma, PostgreSQL 
 - [x] Program editing — PUT /api/workout/programs/[id] + /workout/programs/[id]/edit page
 - [x] Feedback page — /workout/feedback + POST /api/workout/feedback
 - [x] Org/Team feature — full CRUD: create org, invite by email, manage roles, remove members
-- [ ] Superset/dropset UI (model supports supersetGroup, no UI)
+- [x] Superset/dropset UI — inline group picker on log page; Link2 button to assign/join groups
 - [x] Data import — POST /api/workout/import, drag-and-drop UI at /workout/import, CSV parse, lb→kg, exercise name matching
 - [x] Error tracking — Sentry via @sentry/nextjs, sentry.client/server/edge.config.ts, withSentryConfig in next.config.ts (needs NEXT_PUBLIC_SENTRY_DSN in Vercel)
 - [ ] Tests (none exist)
 - [x] Admin panel (5b00152): /admin dashboard (stats+charts), /admin/users, /admin/feedback (status management), /admin/organizations — set ADMIN_EMAIL in Vercel env to activate
 
 ## Recent Commits
+- 0ecc422 — Add superset UI, Web Push notifications, and Vercel cron for reminders
 - 3e221b0 — Add Sentry error tracking and CSV data import
 - 5b00152 — Add admin panel (dashboard, users, feedback, organizations)
 - d799e97 — Add rate limiting, program editing, and feedback

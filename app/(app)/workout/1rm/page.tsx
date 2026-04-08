@@ -20,6 +20,24 @@ function brzycki(weight: number, reps: number) {
   return weight * (36 / (37 - reps));
 }
 
+// Standard plate sizes in lb
+const PLATES = [45, 35, 25, 10, 5, 2.5] as const;
+const BAR_WEIGHT = 45; // standard Olympic bar
+
+function calcPlates(targetLb: number): { plate: number; count: number }[] | null {
+  const loadPerSide = (targetLb - BAR_WEIGHT) / 2;
+  if (loadPerSide < 0) return null;
+  const result: { plate: number; count: number }[] = [];
+  let remaining = loadPerSide;
+  for (const p of PLATES) {
+    const count = Math.floor(remaining / p);
+    if (count > 0) { result.push({ plate: p, count }); remaining -= count * p; }
+  }
+  // round to nearest 2.5
+  if (remaining > 0.1) return null;
+  return result;
+}
+
 // % of 1RM for rep targets (Prilepin-ish)
 const REP_PERCENTAGES = [
   { reps: 1,  pct: 100 },
@@ -44,6 +62,7 @@ interface PR {
 export default function OneRMPage() {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
+  const [plateTarget, setPlateTarget] = useState("");
   const [prs, setPrs] = useState<PR[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -118,6 +137,69 @@ export default function OneRMPage() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Plate Calculator */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Plate Calculator</CardTitle>
+          <CardDescription>How to load a 45 lb Olympic bar to hit a target weight</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-4 items-end">
+            <div className="space-y-1 flex-1">
+              <Label>Target weight (lb)</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 315"
+                value={plateTarget}
+                onChange={(e) => setPlateTarget(e.target.value)}
+              />
+            </div>
+            {estimated1RM && (
+              <Button variant="outline" size="sm" className="shrink-0" onClick={() => setPlateTarget(String(Math.round(estimated1RM)))}>
+                Use 1RM
+              </Button>
+            )}
+          </div>
+          {(() => {
+            const t = parseFloat(plateTarget);
+            if (!t || t <= 0) return null;
+            if (t <= BAR_WEIGHT) return <p className="text-sm text-gray-400">Just the bar ({BAR_WEIGHT} lb)</p>;
+            const plates = calcPlates(t);
+            if (!plates) return <p className="text-sm text-orange-500">Can&apos;t make exactly {t} lb with standard plates. Try rounding to nearest 5 lb.</p>;
+            return (
+              <div className="rounded-xl bg-gray-900 text-white p-4 space-y-3">
+                <p className="text-sm text-gray-400 text-center">Each side of the bar</p>
+                {plates.length === 0 ? (
+                  <p className="text-center text-gray-400">Just the bar ({BAR_WEIGHT} lb)</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {plates.map(({ plate, count }) =>
+                      Array.from({ length: count }).map((_, i) => (
+                        <div key={`${plate}-${i}`} className="flex flex-col items-center gap-1">
+                          <div className={`rounded-full flex items-center justify-center font-bold text-sm text-white ${
+                            plate === 45 ? "h-14 w-14 bg-red-600" :
+                            plate === 35 ? "h-12 w-12 bg-blue-600" :
+                            plate === 25 ? "h-11 w-11 bg-yellow-500" :
+                            plate === 10 ? "h-9 w-9 bg-green-600" :
+                            plate === 5  ? "h-8 w-8 bg-gray-500" :
+                                           "h-7 w-7 bg-gray-400"
+                          }`}>
+                            {plate}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 text-center">
+                  Bar ({BAR_WEIGHT}) + {plates.map(p => `${p.count}×${p.plate}`).join(" + ")} per side = {t} lb total
+                </p>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
 

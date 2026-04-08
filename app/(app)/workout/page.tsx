@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles, Pencil, Droplets, Moon } from "lucide-react";
+import { Dumbbell, TrendingUp, Calendar, Flame, Plus, Play, Target, CheckCircle2, Circle, Sparkles, Pencil, Droplets, Moon, Scale } from "lucide-react";
+import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/date";
 
@@ -224,6 +225,74 @@ function QuickSleep() {
   );
 }
 
+function QuickBodyWeight() {
+  const [entries, setEntries] = useState<{ date: string; weightKg: number | null }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/workout/body")
+      .then((r) => r.ok ? r.json() : [])
+      .then((d: { date: string; weightKg: number | null }[]) => {
+        const withWeight = d.filter((e) => e.weightKg != null).slice(0, 30).reverse();
+        setEntries(withWeight);
+      })
+      .catch(console.error);
+  }, []);
+
+  const latest = entries[entries.length - 1];
+  const first = entries[0];
+  const lbLatest = latest?.weightKg ? Math.round(latest.weightKg * 2.20462 * 10) / 10 : null;
+  const trend = latest && first && latest !== first && first.weightKg && latest.weightKg
+    ? Math.round((latest.weightKg - first.weightKg) * 2.20462 * 10) / 10
+    : null;
+  const chartData = entries.map((e) => ({ lb: e.weightKg ? Math.round(e.weightKg * 2.20462 * 10) / 10 : null }));
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+            <Scale className="h-3.5 w-3.5 text-purple-400" /> Body Weight
+          </CardTitle>
+          <Link href="/workout/body" className="text-xs text-gray-400 hover:text-gray-600">View →</Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {lbLatest ? (
+          <>
+            <div className="flex items-end gap-2">
+              <p className="text-xl font-bold">{lbLatest} lb</p>
+              {trend !== null && (
+                <p className={`text-xs font-medium mb-0.5 ${trend < 0 ? "text-green-600" : trend > 0 ? "text-orange-500" : "text-gray-400"}`}>
+                  {trend > 0 ? "+" : ""}{trend} lb
+                </p>
+              )}
+            </div>
+            {chartData.length > 1 && (
+              <ResponsiveContainer width="100%" height={40}>
+                <LineChart data={chartData}>
+                  <YAxis domain={["auto", "auto"]} hide />
+                  <Tooltip
+                    formatter={(v) => [`${v} lb`, "Weight"]}
+                    contentStyle={{ fontSize: 11 }}
+                  />
+                  <Line type="monotone" dataKey="lb" stroke="#a855f7" strokeWidth={1.5} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-xl font-bold text-gray-300">—</p>
+            <Link href="/workout/body" className="w-full rounded-md border border-gray-200 dark:border-gray-700 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors block text-center">
+              Log weight
+            </Link>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function WorkoutPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeProgram, setActiveProgram] = useState<ActiveProgram | null>(null);
@@ -408,6 +477,27 @@ export default function WorkoutPage() {
                   )}
                 </div>
 
+                {/* 7-day activity dots */}
+                <div className="flex items-center gap-1.5">
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - (6 - i));
+                    const dayStr = d.toISOString().slice(0, 10);
+                    const trained = (stats?.recentSessions ?? []).some(
+                      (s) => s.startedAt.toString().slice(0, 10) === dayStr
+                    );
+                    const isToday = i === 6;
+                    return (
+                      <div key={i} className="flex flex-col items-center gap-1">
+                        <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-medium transition-colors ${trained ? "bg-indigo-500 text-white" : isToday ? "border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400" : "bg-gray-100 dark:bg-gray-800 text-gray-400"}`}>
+                          {["S","M","T","W","T","F","S"][d.getDay()]}
+                        </div>
+                        {trained && <div className="h-1 w-1 rounded-full bg-indigo-400" />}
+                      </div>
+                    );
+                  })}
+                </div>
+
                 <div className="flex items-center justify-between border-t pt-4">
                   <div>
                     <p className="text-sm font-medium">Volume</p>
@@ -544,10 +634,11 @@ export default function WorkoutPage() {
         </Card>
       )}
 
-      {/* Quick-log row: Water & Sleep */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Quick-log row: Water, Sleep & Body Weight */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <QuickWater />
         <QuickSleep />
+        <QuickBodyWeight />
       </div>
     </div>
   );
