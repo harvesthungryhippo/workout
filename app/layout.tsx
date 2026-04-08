@@ -7,11 +7,22 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Workout",
   description: "Personal workout tracker",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Workout",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+      </head>
       <body className="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
         <ThemeProvider>
           <LanguageProvider>

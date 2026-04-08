@@ -194,7 +194,14 @@ export default function WaterPage() {
             </div>
           </CardContent>
         </Card>
-      ) : null}
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center">
+            <Droplets className="h-7 w-7 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-400">No entries today. Log your first glass above.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

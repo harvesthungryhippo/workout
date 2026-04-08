@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, WifiOff, Dumbbell } from "lucide-react";
+import { Check, Timer, Plus, ArrowLeft, CheckCircle2, X, Search, BookmarkPlus, Link2, Pencil, TrendingUp, Trash2, WifiOff, Dumbbell, Share2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils/date";
@@ -956,13 +956,32 @@ export default function LogWorkoutPage() {
               </ul>
             </div>
           </div>
-          <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex gap-3">
-            <Button variant="outline" className="flex-1" onClick={() => dismissSummary(false)}>
-              Done
+          <div className="p-6 border-t border-gray-100 dark:border-gray-800 space-y-2">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => {
+                const prsText = summary.prsHit.length > 0 ? `\n🏆 PRs: ${summary.prsHit.join(", ")}` : "";
+                const exText = summary.exercises.map((e) => `  • ${e.name} — ${e.setsCompleted} sets`).join("\n");
+                const text = `💪 ${summary.sessionName}\n⏱ ${summary.durationMinutes} min · ${summary.totalSets} sets · ${summary.totalVolumeLb.toLocaleString()} lb${prsText}\n\n${exText}\n\nhungryhippo.fit`;
+                if (navigator.share) {
+                  navigator.share({ title: summary.sessionName, text }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(text).then(() => toast.success("Copied to clipboard!")).catch(() => toast.error("Could not copy."));
+                }
+              }}
+            >
+              <Share2 className="h-4 w-4" />
+              Share workout
             </Button>
-            <Button className="flex-1" onClick={() => dismissSummary(true)}>
-              View Session
-            </Button>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => dismissSummary(false)}>
+                Done
+              </Button>
+              <Button className="flex-1" onClick={() => dismissSummary(true)}>
+                View Session
+              </Button>
+            </div>
           </div>
         </div>
       </div>
