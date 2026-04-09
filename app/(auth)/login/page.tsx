@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
@@ -39,9 +40,12 @@ function LoginForm() {
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t.auth.signInTitle}</p>
+      <div className="flex flex-col items-center gap-3">
+        <Image src="/icon.png" alt="Workout" width={72} height={108} className="rounded-2xl" priority />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t.auth.signInTitle}</p>
+        </div>
       </div>
       {verified && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">Email verified! You can now sign in.</p>}
       {reset && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">Password updated. Sign in with your new password.</p>}

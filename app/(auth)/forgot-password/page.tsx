@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
@@ -22,9 +23,12 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forgot password</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">We&apos;ll send you a reset link.</p>
+      <div className="flex flex-col items-center gap-3">
+        <Image src="/icon.png" alt="Workout" width={72} height={108} className="rounded-2xl" priority />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forgot password</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">We&apos;ll send you a reset link.</p>
+        </div>
       </div>
 
       {submitted ? (
