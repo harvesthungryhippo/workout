@@ -34,7 +34,8 @@ function parseCSV(text: string): ParsedRow[] {
     if (cols.length < 7) continue;
 
     const [date, sessionName, exerciseName, , setNum, reps, weightLb, rpe, completed] = cols;
-    const weightKg = weightLb && weightLb !== "" ? parseFloat(weightLb) / 2.20462 : null;
+    // weightKg column stores lb values (misnamed — UI inputs and stores lb throughout)
+    const weightKg = weightLb && weightLb !== "" ? parseFloat(weightLb) : null;
 
     rows.push({
       date: date.trim(),

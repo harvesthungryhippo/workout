@@ -7,8 +7,6 @@ import { withAuth, type AuthedRequest, type Params } from "@/lib/api/withAuth";
 async function getLastSession(req: AuthedRequest, ctx: Params) {
   try {
     const { id } = await ctx.params;
-    const KG_TO_LB = 2.20462;
-
     const se = await prisma.sessionExercise.findFirst({
       where: {
         exerciseId: id,
@@ -31,7 +29,7 @@ async function getLastSession(req: AuthedRequest, ctx: Params) {
         .map((s) => ({
           setNumber: s.setNumber,
           reps: s.reps,
-          weightLb: s.weightKg ? Math.round(Number(s.weightKg) * KG_TO_LB * 10) / 10 : null,
+          weightLb: s.weightKg ? Math.round(Number(s.weightKg) * 10) / 10 : null,
           durationSeconds: s.durationSeconds,
         })),
     });

@@ -55,6 +55,8 @@ A full-stack personal fitness tracker built with Next.js 15, Prisma, PostgreSQL 
 - [x] Admin panel (5b00152): /admin dashboard (stats+charts), /admin/users, /admin/feedback (status management), /admin/organizations — set ADMIN_EMAIL in Vercel env to activate
 
 ## Recent Commits
+- 4401696 — Add shareable summaries, water empty state, and PWA manifest
+- 21c465c — Add body weight chart, 7-day streak dots, and plate calculator
 - 0ecc422 — Add superset UI, Web Push notifications, and Vercel cron for reminders
 - 3e221b0 — Add Sentry error tracking and CSV data import
 - 5b00152 — Add admin panel (dashboard, users, feedback, organizations)

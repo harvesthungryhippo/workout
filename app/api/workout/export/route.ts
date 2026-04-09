@@ -38,7 +38,7 @@ async function exportData(req: AuthedRequest) {
               ex.exercise.muscleGroup,
               set.setNumber,
               set.reps ?? "",
-              set.weightKg ? (parseFloat(set.weightKg.toString()) * 2.20462).toFixed(1) : "",
+              set.weightKg ? parseFloat(set.weightKg.toString()).toFixed(1) : "",
               set.rpe ?? "",
               set.completed ? "Yes" : "No",
             ].map((v) => `"${v}"`).join(","));

@@ -226,13 +226,13 @@ function QuickSleep() {
 }
 
 function QuickBodyWeight() {
-  const [entries, setEntries] = useState<{ date: string; weightKg: number | null }[]>([]);
+  const [entries, setEntries] = useState<{ date: string; weightLbs: number | null }[]>([]);
 
   useEffect(() => {
     fetch("/api/workout/body")
       .then((r) => r.ok ? r.json() : [])
-      .then((d: { date: string; weightKg: number | null }[]) => {
-        const withWeight = d.filter((e) => e.weightKg != null).slice(0, 30).reverse();
+      .then((d: { date: string; weightLbs: number | null }[]) => {
+        const withWeight = d.filter((e) => e.weightLbs != null).slice(0, 30).reverse();
         setEntries(withWeight);
       })
       .catch(console.error);
@@ -240,11 +240,11 @@ function QuickBodyWeight() {
 
   const latest = entries[entries.length - 1];
   const first = entries[0];
-  const lbLatest = latest?.weightKg ? Math.round(latest.weightKg * 2.20462 * 10) / 10 : null;
-  const trend = latest && first && latest !== first && first.weightKg && latest.weightKg
-    ? Math.round((latest.weightKg - first.weightKg) * 2.20462 * 10) / 10
+  const lbLatest = latest?.weightLbs ? Math.round(Number(latest.weightLbs) * 10) / 10 : null;
+  const trend = latest && first && latest !== first && first.weightLbs && latest.weightLbs
+    ? Math.round((Number(latest.weightLbs) - Number(first.weightLbs)) * 10) / 10
     : null;
-  const chartData = entries.map((e) => ({ lb: e.weightKg ? Math.round(e.weightKg * 2.20462 * 10) / 10 : null }));
+  const chartData = entries.map((e) => ({ lb: e.weightLbs ? Math.round(Number(e.weightLbs) * 10) / 10 : null }));
 
   return (
     <Card>

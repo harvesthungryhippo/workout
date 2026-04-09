@@ -31,11 +31,12 @@ async function getSuggestion(req: AuthedRequest) {
     // Build history
     const history = recentSessions.map((se) => {
       const completedSets = se.sets.filter((s) => s.completed && s.reps && s.weightKg);
+      // weightKg column stores lb values (column is misnamed — UI inputs and stores lb throughout)
       const avgWeight = completedSets.length > 0
-        ? completedSets.reduce((sum, s) => sum + parseFloat(s.weightKg!.toString()) * 2.20462, 0) / completedSets.length
+        ? completedSets.reduce((sum, s) => sum + parseFloat(s.weightKg!.toString()), 0) / completedSets.length
         : 0;
       const maxReps = completedSets.reduce((max, s) => Math.max(max, s.reps ?? 0), 0);
-      const maxWeight = completedSets.reduce((max, s) => Math.max(max, parseFloat((s.weightKg ?? 0).toString()) * 2.20462), 0);
+      const maxWeight = completedSets.reduce((max, s) => Math.max(max, parseFloat((s.weightKg ?? 0).toString())), 0);
       return {
         date: se.session.startedAt,
         setCount: completedSets.length,
