@@ -42,6 +42,7 @@ interface Tournament {
   name: string;
   description: string | null;
   status: "DRAFT" | "ACTIVE" | "COMPLETED";
+  sport: string | null;
   metric: string | null;
   unit: string | null;
   participants: Participant[];
@@ -396,9 +397,12 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
             {tournament.description && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{tournament.description}</p>
             )}
-            {tournament.metric && (
+            {(tournament.sport || tournament.metric) && (
               <p className="text-xs text-gray-400 mt-0.5">
-                {tournament.metric}{tournament.unit ? ` · ${tournament.unit}` : ""}
+                {[
+                  tournament.sport,
+                  tournament.metric && `${tournament.metric}${tournament.unit ? ` (${tournament.unit})` : ""}`,
+                ].filter(Boolean).join(" · ")}
               </p>
             )}
           </div>

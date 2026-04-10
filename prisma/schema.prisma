@@ -390,6 +390,7 @@ model Tournament {
   name        String
   description String?
   status      TournamentStatus @default(DRAFT)
+  sport       String?
   metric      String?
   unit        String?
   createdAt   DateTime         @default(now())

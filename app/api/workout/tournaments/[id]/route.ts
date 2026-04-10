@@ -33,12 +33,13 @@ async function updateTournament(req: AuthedRequest, ctx: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();
-  const { name, description, metric, unit } = body;
+  const { name, description, sport, metric, unit } = body;
   const updated = await prisma.tournament.update({
     where: { id },
     data: {
       ...(name ? { name: name.trim() } : {}),
       ...(description !== undefined ? { description: description?.trim() || null } : {}),
+      ...(sport !== undefined ? { sport: sport?.trim() || null } : {}),
       ...(metric !== undefined ? { metric: metric?.trim() || null } : {}),
       ...(unit !== undefined ? { unit: unit?.trim() || null } : {}),
     },

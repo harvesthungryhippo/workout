@@ -16,7 +16,7 @@ async function listTournaments(req: AuthedRequest) {
 
 async function createTournament(req: AuthedRequest) {
   const body = await req.json();
-  const { name, description, metric, unit } = body;
+  const { name, description, sport, metric, unit } = body;
   if (!name?.trim()) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
@@ -25,6 +25,7 @@ async function createTournament(req: AuthedRequest) {
       userId: req.session.userId,
       name: name.trim(),
       description: description?.trim() || null,
+      sport: sport?.trim() || null,
       metric: metric?.trim() || null,
       unit: unit?.trim() || null,
     },

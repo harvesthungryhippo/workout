@@ -17,6 +17,7 @@ interface Tournament {
   name: string;
   description: string | null;
   status: "DRAFT" | "ACTIVE" | "COMPLETED";
+  sport: string | null;
   metric: string | null;
   unit: string | null;
   createdAt: string;
@@ -43,6 +44,7 @@ export default function TournamentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [sport, setSport] = useState("");
   const [metric, setMetric] = useState("");
   const [unit, setUnit] = useState("");
   const [saving, setSaving] = useState(false);
@@ -62,7 +64,7 @@ export default function TournamentsPage() {
     const res = await fetch("/api/workout/tournaments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, metric, unit }),
+      body: JSON.stringify({ name, description, sport, metric, unit }),
     });
     if (res.ok) {
       const t = await res.json();
@@ -123,6 +125,14 @@ export default function TournamentsPage() {
                   placeholder="e.g. Best 1-rep max wins"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Sport / Category (optional)</Label>
+                <Input
+                  placeholder="e.g. Powerlifting, Basketball, Swimming"
+                  value={sport}
+                  onChange={(e) => setSport(e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -207,6 +217,7 @@ export default function TournamentsPage() {
                           <p className="text-xs text-gray-400 mt-0.5">
                             {t.participants.length} participant{t.participants.length !== 1 ? "s" : ""}
                             {total > 0 && ` · ${completed}/${total} matches done`}
+                            {t.sport && ` · ${t.sport}`}
                             {t.metric && ` · ${t.metric}${t.unit ? ` (${t.unit})` : ""}`}
                           </p>
                         </div>
