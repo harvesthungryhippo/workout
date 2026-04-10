@@ -81,7 +81,7 @@ export default function PublicScoreboardPage({ params }: { params: Promise<{ id:
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 5000);
+    const interval = setInterval(load, 1000);
     return () => clearInterval(interval);
   }, [load]);
 
