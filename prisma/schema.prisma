@@ -363,3 +363,74 @@ model CardioSession {
   @@index([userId])
   @@index([startedAt])
 }
+
+model FitnessTest {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @default(now())
+  metric    String
+  value     Float
+  unit      String
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, metric])
+}
+
+enum TournamentStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+model Tournament {
+  id          String           @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  status      TournamentStatus @default(DRAFT)
+  metric      String?
+  unit        String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  participants TournamentParticipant[]
+  matches      TournamentMatch[]
+
+  @@index([userId])
+}
+
+model TournamentParticipant {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  name         String
+  seed         Int
+
+  matchesAsP1 TournamentMatch[] @relation("MatchP1")
+  matchesAsP2 TournamentMatch[] @relation("MatchP2")
+  wonMatches  TournamentMatch[] @relation("MatchWinner")
+
+  @@index([tournamentId])
+}
+
+model TournamentMatch {
+  id             String     @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  round          Int
+  matchIndex     Int
+  participant1Id String?
+  participant2Id String?
+  winnerId       String?
+  score1         Float?
+  score2         Float?
+
+  participant1 TournamentParticipant? @relation("MatchP1", fields: [participant1Id], references: [id], onDelete: SetNull)
+  participant2 TournamentParticipant? @relation("MatchP2", fields: [participant2Id], references: [id], onDelete: SetNull)
+  winner       TournamentParticipant? @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([tournamentId])
+  @@index([round])
+}

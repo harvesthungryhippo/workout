@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   Dumbbell, Calendar, BarChart2, BookOpen, Play, LogOut, Scale, Bookmark,
   Calculator, Target, Utensils, Droplets, Moon, Activity, Bell, TrendingUp,
-  Download, Upload, Settings, ChevronDown, ChevronRight, Zap, Swords, LayoutGrid, ShieldCheck, Building2, MessageSquare,
+  Download, Upload, Settings, ChevronDown, ChevronRight, Zap, Swords, LayoutGrid, ShieldCheck, Building2, MessageSquare, Gauge, Trophy,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -78,16 +78,18 @@ export function MobileNav({ isAdmin }: { isAdmin?: boolean }) {
         { href: "/workout/overload",     label: t.nav.overload,     icon: TrendingUp },
         { href: "/workout/goals",        label: t.nav.goals,        icon: Target },
         { href: "/workout/cardio",       label: t.nav.cardio,       icon: Zap },
+        { href: "/workout/tournaments",  label: "Tournaments",      icon: Trophy },
       ],
     },
     {
       title: t.nav.health,
       items: [
-        { href: "/workout/body",      label: t.nav.body,      icon: Scale },
-        { href: "/workout/nutrition", label: t.nav.nutrition, icon: Utensils },
-        { href: "/workout/water",     label: t.nav.water,     icon: Droplets },
-        { href: "/workout/sleep",     label: t.nav.sleep,     icon: Moon },
-        { href: "/workout/recovery",  label: t.nav.recovery,  icon: Activity },
+        { href: "/workout/body",          label: t.nav.body,      icon: Scale },
+        { href: "/workout/nutrition",     label: t.nav.nutrition, icon: Utensils },
+        { href: "/workout/water",         label: t.nav.water,     icon: Droplets },
+        { href: "/workout/sleep",         label: t.nav.sleep,     icon: Moon },
+        { href: "/workout/recovery",      label: t.nav.recovery,  icon: Activity },
+        { href: "/workout/fitness-tests", label: "Fitness Tests", icon: Gauge },
       ],
     },
     {
@@ -223,15 +225,17 @@ export default function Sidebar({ isAdmin }: { isAdmin?: boolean }) {
     { href: "/workout/progress",   label: t.nav.progress,   icon: BarChart2 },
     { href: "/workout/overload",   label: t.nav.overload,   icon: TrendingUp },
     { href: "/workout/goals",      label: t.nav.goals,      icon: Target },
-    { href: "/workout/cardio",     label: t.nav.cardio,     icon: Zap },
+    { href: "/workout/cardio",       label: t.nav.cardio,       icon: Zap },
+    { href: "/workout/tournaments",  label: "Tournaments",      icon: Trophy },
   ];
 
   const NAV_HEALTH = [
-    { href: "/workout/body",      label: t.nav.body,       icon: Scale },
-    { href: "/workout/nutrition", label: t.nav.nutrition,  icon: Utensils },
-    { href: "/workout/water",     label: t.nav.water,      icon: Droplets },
-    { href: "/workout/sleep",     label: t.nav.sleep,      icon: Moon },
-    { href: "/workout/recovery",  label: t.nav.recovery,   icon: Activity },
+    { href: "/workout/body",          label: t.nav.body,       icon: Scale },
+    { href: "/workout/nutrition",     label: t.nav.nutrition,  icon: Utensils },
+    { href: "/workout/water",         label: t.nav.water,      icon: Droplets },
+    { href: "/workout/sleep",         label: t.nav.sleep,      icon: Moon },
+    { href: "/workout/recovery",      label: t.nav.recovery,   icon: Activity },
+    { href: "/workout/fitness-tests", label: "Fitness Tests",  icon: Gauge },
   ];
 
   const NAV_TOOLS = [
