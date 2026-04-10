@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
-  Trophy, Plus, Trash2, Play, ArrowLeft, CheckCircle2, ChevronRight,
+  Trophy, Plus, Trash2, Play, ArrowLeft, CheckCircle2, ChevronRight, Monitor,
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 /* ------------------------------------------------------------------ */
@@ -79,11 +80,13 @@ function MatchCard({
   match,
   unit,
   canEdit,
+  tournamentId,
   onResult,
 }: {
   match: Match;
   unit: string | null;
   canEdit: boolean;
+  tournamentId: string;
   onResult: (match: Match) => void;
 }) {
   const isBye = match.winnerId && (!match.participant1Id || !match.participant2Id);
@@ -139,13 +142,25 @@ function MatchCard({
         </div>
         {participantRow(p2, match.participant2Id, match.score2)}
       </div>
-      {canEdit && isReady && !isBye && (
-        <button
-          onClick={() => onResult(match)}
-          className="w-full border-t border-gray-100 dark:border-gray-800 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-        >
-          {isDone ? "Edit result" : "Enter result"}
-        </button>
+      {isReady && !isBye && (
+        <div className="border-t border-gray-100 dark:border-gray-800 flex">
+          {canEdit && (
+            <button
+              onClick={() => onResult(match)}
+              className="flex-1 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            >
+              {isDone ? "Edit result" : "Enter result"}
+            </button>
+          )}
+          <Link
+            href={`/workout/tournaments/${tournamentId}/scoreboard/${match.id}`}
+            className={`flex items-center justify-center gap-1 py-1.5 px-3 text-xs text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ${canEdit ? "border-l border-gray-100 dark:border-gray-800" : "flex-1"}`}
+            title="Open scoreboard"
+          >
+            <Monitor className="h-3 w-3" />
+            {!canEdit && <span>Scoreboard</span>}
+          </Link>
+        </div>
       )}
     </div>
   );
@@ -524,6 +539,7 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
                         match={match}
                         unit={tournament.unit}
                         canEdit={isActive}
+                        tournamentId={tournament.id}
                         onResult={setResultMatch}
                       />
                     ))}

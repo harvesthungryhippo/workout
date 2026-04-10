@@ -76,4 +76,30 @@ async function reportResult(req: AuthedRequest, ctx: Params) {
   return NextResponse.json({ ok: true });
 }
 
+/** PATCH: update live running scores only — does NOT advance winner or change tournament status */
+async function updateLiveScore(req: AuthedRequest, ctx: Params) {
+  const { id, matchId } = await ctx.params;
+  const body = await req.json();
+  const { score1, score2 } = body;
+
+  const tournament = await prisma.tournament.findUnique({ where: { id } });
+  if (!tournament) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (tournament.userId !== req.session.userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (tournament.status !== "ACTIVE") return NextResponse.json({ error: "Tournament not active" }, { status: 400 });
+
+  const match = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });
+  if (!match || match.tournamentId !== id) return NextResponse.json({ error: "Match not found" }, { status: 404 });
+
+  await prisma.tournamentMatch.update({
+    where: { id: matchId },
+    data: {
+      score1: score1 !== undefined ? score1 : match.score1,
+      score2: score2 !== undefined ? score2 : match.score2,
+    },
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
 export const PUT = withAuth(reportResult);
+export const PATCH = withAuth(updateLiveScore);
