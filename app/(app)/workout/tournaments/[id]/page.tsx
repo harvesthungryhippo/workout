@@ -12,6 +12,7 @@ import {
   Trophy, Plus, Trash2, Play, ArrowLeft, CheckCircle2, ChevronRight, Monitor,
 } from "lucide-react";
 import Link from "next/link";
+import { ShareButton } from "@/components/ShareButton";
 import { toast } from "sonner";
 
 /* ------------------------------------------------------------------ */
@@ -394,7 +395,8 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
           <ArrowLeft className="h-4 w-4" /> All tournaments
         </button>
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="flex items-start gap-3">
+            <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{tournament.name}</h1>
               <span
@@ -420,6 +422,13 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
                 ].filter(Boolean).join(" · ")}
               </p>
             )}
+            </div>
+            <ShareButton
+              url={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://hungryhippo.fit"}/t/${tournament.id}`}
+              title={`${tournament.name} — Tournament Bracket`}
+              className="mt-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              label="Share"
+            />
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState, use, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Trophy, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
 import { toast } from "sonner";
 
 /* ------------------------------------------------------------------ */
@@ -379,9 +380,16 @@ export default function ScoreboardPage({
             {tournament.sport ?? theme.label}
           </span>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-white/40 uppercase tracking-wider">{roundLabel}</p>
-          <p className="text-xs text-white/60 truncate max-w-[140px]">{tournament.name}</p>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-xs text-white/40 uppercase tracking-wider">{roundLabel}</p>
+            <p className="text-xs text-white/60 truncate max-w-[120px]">{tournament.name}</p>
+          </div>
+          <ShareButton
+            url={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://hungryhippo.fit"}/s/${id}/${matchId}`}
+            title={`Live: ${match.participant1?.name ?? "P1"} vs ${match.participant2?.name ?? "P2"}`}
+            className="text-white/40 hover:text-white/70 transition-colors"
+          />
         </div>
       </div>
 
