@@ -155,6 +155,36 @@ const THEMES: Record<string, SportTheme> = {
     winnerBtn: "bg-amber-600 hover:bg-amber-500 text-black",
     increments: [1], unit: "",
   },
+  badminton: {
+    emoji: "🏸", label: "Badminton",
+    bg: "bg-gradient-to-br from-sky-950 via-blue-950 to-black",
+    panel: "bg-sky-950/40", panelBorder: "border-sky-800/40",
+    accent: "text-sky-400", scoreText: "text-sky-300",
+    btnAdd: "bg-sky-700 hover:bg-sky-600 text-white",
+    btnSub: "bg-slate-700 hover:bg-slate-600 text-sky-200",
+    winnerBtn: "bg-sky-600 hover:bg-sky-500 text-white",
+    increments: [1], unit: "pts",
+  },
+  "ping pong": {
+    emoji: "🏓", label: "Ping Pong",
+    bg: "bg-gradient-to-br from-orange-950 via-blue-950 to-black",
+    panel: "bg-blue-950/40", panelBorder: "border-orange-800/40",
+    accent: "text-orange-400", scoreText: "text-orange-300",
+    btnAdd: "bg-orange-600 hover:bg-orange-500 text-white",
+    btnSub: "bg-blue-900 hover:bg-blue-800 text-orange-200",
+    winnerBtn: "bg-orange-600 hover:bg-orange-500 text-white",
+    increments: [1], unit: "pts",
+  },
+  "table tennis": {
+    emoji: "🏓", label: "Table Tennis",
+    bg: "bg-gradient-to-br from-orange-950 via-blue-950 to-black",
+    panel: "bg-blue-950/40", panelBorder: "border-orange-800/40",
+    accent: "text-orange-400", scoreText: "text-orange-300",
+    btnAdd: "bg-orange-600 hover:bg-orange-500 text-white",
+    btnSub: "bg-blue-900 hover:bg-blue-800 text-orange-200",
+    winnerBtn: "bg-orange-600 hover:bg-orange-500 text-white",
+    increments: [1], unit: "pts",
+  },
 };
 
 const DEFAULT_THEME: SportTheme = {
